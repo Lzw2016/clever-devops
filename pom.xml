@@ -50,11 +50,11 @@
                 <artifactId>clever-devops-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.clever</groupId>
-                <artifactId>clever-devops-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>org.clever</groupId>-->
+                <!--<artifactId>clever-devops-client</artifactId>-->
+                <!--<version>${project.version}</version>-->
+            <!--</dependency>-->
             <!--clever-common-->
             <dependency>
                 <groupId>org.clever</groupId>
