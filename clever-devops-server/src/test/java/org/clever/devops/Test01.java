@@ -32,4 +32,16 @@ public class Test01 {
         log.info(JacksonMapper.nonEmptyMapper().toJson(info));
         dockerClient.close();
     }
+
+    @Test
+    public void test02() throws IOException {
+        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+                .withDockerHost(dockerHost)
+//                .withApiVersion(version)
+                .build();
+        DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
+//        Info info = dockerClient.
+//        log.info(JacksonMapper.nonEmptyMapper().toJson(info));
+        dockerClient.close();
+    }
 }
