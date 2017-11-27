@@ -15,6 +15,12 @@
         <dependency>
             <groupId>org.clever</groupId>
             <artifactId>clever-common-server</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+                    <artifactId>jsr311-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.clever</groupId>
