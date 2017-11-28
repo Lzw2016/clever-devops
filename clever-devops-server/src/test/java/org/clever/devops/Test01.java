@@ -5,11 +5,15 @@ import com.github.dockerjava.api.model.Info;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.swarm.Swarm;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * 作者：lizw <br/>
@@ -34,14 +38,16 @@ public class Test01 {
     }
 
     @Test
-    public void test02() throws IOException {
-        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost(dockerHost)
-//                .withApiVersion(version)
+    public void test02() throws IOException, DockerException, InterruptedException {
+        DefaultDockerClient docker = DefaultDockerClient.builder()
+                .uri("http://10.255.8.212:2375")
                 .build();
-        DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
-//        Info info = dockerClient.
-//        log.info(JacksonMapper.nonEmptyMapper().toJson(info));
-        dockerClient.close();
+        List<com.spotify.docker.client.messages.Container> containers = docker.listContainers();
+        for (com.spotify.docker.client.messages.Container container : containers) {
+            log.info(JacksonMapper.nonEmptyMapper().toJson(container));
+        }
+        Swarm swarm = docker.inspectSwarm();
+        log.info(JacksonMapper.nonEmptyMapper().toJson(swarm));
+        docker.close();
     }
 }
