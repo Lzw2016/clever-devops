@@ -41,7 +41,14 @@ public class Test01 {
     public void test02() throws IOException, DockerException, InterruptedException {
         DefaultDockerClient docker = DefaultDockerClient.builder()
                 .uri("http://10.255.8.212:2375")
+//                .registryAuthSupplier()
                 .build();
+
+//        ContainerConfig.builder().
+//        docker.createContainer()
+
+//        docker.createService(ServiceSpec.builder().)
+
         List<com.spotify.docker.client.messages.Container> containers = docker.listContainers();
         for (com.spotify.docker.client.messages.Container container : containers) {
             log.info(JacksonMapper.nonEmptyMapper().toJson(container));
