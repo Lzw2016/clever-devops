@@ -1,17 +1,17 @@
 package org.clever.devops.controller;
 
+import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
 import org.clever.devops.dto.request.CodeRepositoryAddDto;
+import org.clever.devops.dto.request.CodeRepositoryQueryDto;
+import org.clever.devops.dto.request.CodeRepositoryUpdateDto;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.service.CodeRepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 作者： lzw<br/>
@@ -29,5 +29,23 @@ public class CodeRepositoryController extends BaseController {
     @PostMapping("/code_repository" + JSON_SUFFIX)
     public CodeRepository addCodeRepository(@RequestBody @Validated CodeRepositoryAddDto codeRepositoryAddDto) {
         return codeRepositoryService.addCodeRepository(codeRepositoryAddDto);
+    }
+
+    @ApiOperation("查询代码仓库")
+    @GetMapping("/code_repository" + JSON_SUFFIX)
+    public PageInfo<CodeRepository> findCodeRepository(CodeRepositoryQueryDto codeRepositoryQueryDto) {
+        return codeRepositoryService.findCodeRepository(codeRepositoryQueryDto);
+    }
+
+    @ApiOperation("获取代码仓库")
+    @GetMapping("/code_repository/{projectName}" + JSON_SUFFIX)
+    public CodeRepository getCodeRepository(@PathVariable("projectName") String projectName) {
+        return codeRepositoryService.getCodeRepository(projectName);
+    }
+
+    @ApiOperation("更新代码仓库")
+    @PutMapping("/code_repository/{id}" + JSON_SUFFIX)
+    public CodeRepository updateCodeRepository(@PathVariable("id") Long id, @RequestBody @Validated CodeRepositoryUpdateDto codeRepositoryUpdateDto) {
+        return codeRepositoryService.updateCodeRepository(id, codeRepositoryUpdateDto);
     }
 }

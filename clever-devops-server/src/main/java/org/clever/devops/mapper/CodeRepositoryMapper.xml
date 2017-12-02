@@ -34,4 +34,26 @@
     <select id="getByProjectName" resultMap="BaseResultMap">
         SELECT * FROM code_repository WHERE project_name=#{projectName}
     </select>
+
+    <select id="findCodeRepository" resultMap="BaseResultMap">
+        SELECT *
+        FROM code_repository
+        WHERE 1=1
+        <if test="projectName!='' and projectName!=null">
+            AND project_name LIKE CONCAT(#{projectName}, '%')
+        </if>
+        <if test="language!='' and language!=null">
+            AND language = #{language}
+        </if>
+        <if test="repositoryUrl!='' and repositoryUrl!=null">
+            AND repository_url LIKE CONCAT(#{repositoryUrl}, '%')
+        </if>
+        <if test="repositoryType!='' and repositoryType!=null">
+            AND repository_type = #{repositoryType}
+        </if>
+        <if test="authorizationType!='' and authorizationType!=null">
+            AND authorization_type = #{authorizationType}
+        </if>
+        ORDER BY project_name, create_by DESC
+    </select>
 </mapper>
