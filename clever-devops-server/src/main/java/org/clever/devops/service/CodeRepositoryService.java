@@ -84,7 +84,7 @@ public class CodeRepositoryService {
         if (codeRepositoryUpdateDto.getProjectName() != null) {
             CodeRepository tmp = codeRepositoryMapper.getByProjectName(codeRepositoryUpdateDto.getProjectName());
             if (tmp != null && !Objects.equals(codeRepository.getId(), tmp.getId())) {
-                throw new BusinessException(String.format("项目名称已经在，ProjectName=%1$s", codeRepositoryUpdateDto.getProjectName()));
+                throw new BusinessException(String.format("项目名称已经存在，ProjectName=%1$s", codeRepositoryUpdateDto.getProjectName()));
             }
         }
         // 校验代码仓库类型
@@ -107,6 +107,21 @@ public class CodeRepositoryService {
         codeRepository.setUpdateDate(new Date());
         codeRepositoryMapper.updateByPrimaryKeySelective(codeRepository);
         codeRepository = codeRepositoryMapper.selectByPrimaryKey(id);
+        return codeRepository;
+    }
+
+    /**
+     * 删除代码仓库
+     */
+    @Transactional
+    public CodeRepository delete(String projectName) {
+        CodeRepository codeRepository = codeRepositoryMapper.getByProjectName(projectName);
+        if (codeRepository == null) {
+            throw new BusinessException(String.format("项目名称不存在，ProjectName=%1$s", projectName));
+        }
+        // 校验当前代码仓库是否被依赖
+
+        // TODO 删除代码仓库
         return codeRepository;
     }
 

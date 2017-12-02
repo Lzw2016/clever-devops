@@ -48,4 +48,10 @@ public class CodeRepositoryController extends BaseController {
     public CodeRepository updateCodeRepository(@PathVariable("id") Long id, @RequestBody @Validated CodeRepositoryUpdateDto codeRepositoryUpdateDto) {
         return codeRepositoryService.updateCodeRepository(id, codeRepositoryUpdateDto);
     }
+
+    @ApiOperation("删除代码仓库")
+    @DeleteMapping("/code_repository/{projectName}" + JSON_SUFFIX)
+    public CodeRepository delete(@PathVariable("projectName") String projectName) {
+        return codeRepositoryService.delete(projectName);
+    }
 }
