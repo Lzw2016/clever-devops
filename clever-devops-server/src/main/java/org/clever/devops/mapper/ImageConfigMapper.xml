@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--suppress SqlDialectInspection -->
+<mapper namespace="org.clever.devops.mapper.ImageConfigMapper">
+    <!-- 表image_config(Docker镜像配置)映射 -->
+    <resultMap id="BaseResultMap" type="org.clever.devops.entity.ImageConfig">
+        <!-- 编号 -->
+        <id column="id" property="id"/>
+        <!-- 创建者 -->
+        <result column="create_by" property="createBy"/>
+        <!-- 创建时间 -->
+        <result column="create_date" property="createDate"/>
+        <!-- 更新者 -->
+        <result column="update_by" property="updateBy"/>
+        <!-- 更新时间 -->
+        <result column="update_date" property="updateDate"/>
+        <!-- 代码仓库ID -->
+        <result column="repository_id" property="repositoryId"/>
+        <!-- 代码提交ID(commitID) -->
+        <result column="commit_id" property="commitId"/>
+        <!-- 代码branch或Tag -->
+        <result column="branch" property="branch"/>
+        <!-- 代码下载临时文件夹路径 -->
+        <result column="code_download_path" property="codeDownloadPath"/>
+        <!-- 代码编译方式(Maven npm go) -->
+        <result column="build_type" property="buildType"/>
+        <!-- 代码编译命令(例如 mvn clean install) -->
+        <result column="build_cmd" property="buildCmd"/>
+        <!-- Dockerfile文件相对路径(默认 ./Dockerfile) -->
+        <result column="docker_file_path" property="dockerFilePath"/>
+        <!-- 服务需要的端口号(多个用“,”分隔) -->
+        <result column="server_ports" property="serverPorts"/>
+        <!-- 服务访问域名 -->
+        <result column="server_url" property="serverUrl"/>
+        <!-- 默认运行实例数 -->
+        <result column="server_count" property="serverCount"/>
+        <!-- 当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败) -->
+        <result column="build_state" property="buildState"/>
+        <!-- 服务访问域名 -->
+        <result column="image_id" property="imageId"/>
+        <!-- 镜像开始构建时间 -->
+        <result column="build_start_time" property="buildStartTime"/>
+        <!-- 镜像结束构建时间 -->
+        <result column="build_end_time" property="buildEndTime"/>
+        <!-- 镜像构建日志(代码下载、编译、构建镜像日志) -->
+        <result column="build_logs" property="buildLogs"/>
+        <!-- 镜像说明 -->
+        <result column="description" property="description"/>
+    </resultMap>
+</mapper>

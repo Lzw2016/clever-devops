@@ -1,22 +1,26 @@
-package org.clever.devops.service;
+package org.clever.devops;
 
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import org.springframework.stereotype.Service;
+import org.junit.Test;
 
 import java.io.File;
 import java.util.Collection;
 
 /**
- * Git服务<br/>
+ * 作者： lzw<br/>
+ * 创建时间：2017-12-02 17:48 <br/>
  */
-@Service
 @Slf4j
-public class GitService {
-    // TODO 下载代码
+public class Test02 {
+
+    private static final String remote = "https://github.com/spotify/docker-client";
+    private static final String directory = "1.33";
+
+
     public void test01(String remote, String directory) throws GitAPIException {
         Git git = Git.cloneRepository()
                 .setURI(remote) // 设置远程仓库地址
@@ -31,13 +35,14 @@ public class GitService {
         git.close();
     }
 
-    // TODO 获取版本分支信息
-    public void test02(String remote) throws GitAPIException {
+
+    @Test
+    public void test02() throws GitAPIException {
         Collection<Ref> refs = Git.lsRemoteRepository()
                 .setRemote(remote)
-                .setCredentialsProvider(new UsernamePasswordCredentialsProvider("Lzw2016", ""))
+//                .setCredentialsProvider(new UsernamePasswordCredentialsProvider("Lzw2016", ""))
                 .setHeads(true)
-                .setTags(true)
+//                .setTags(true)
                 .call();
         for (Ref ref : refs) {
             log.info("####　{} | {}", ref.getName(), ref.getObjectId().getName());

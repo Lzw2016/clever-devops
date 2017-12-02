@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--suppress SqlDialectInspection -->
+<mapper namespace="org.clever.devops.mapper.CodeRepositoryMapper">
+    <!-- 表code_repository(代码仓库)映射 -->
+    <resultMap id="BaseResultMap" type="org.clever.devops.entity.CodeRepository">
+        <!-- 编号 -->
+        <id column="id" property="id"/>
+        <!-- 创建者 -->
+        <result column="create_by" property="createBy"/>
+        <!-- 创建时间 -->
+        <result column="create_date" property="createDate"/>
+        <!-- 更新者 -->
+        <result column="update_by" property="updateBy"/>
+        <!-- 更新时间 -->
+        <result column="update_date" property="updateDate"/>
+        <!-- 项目名称 -->
+        <result column="project_name" property="projectName"/>
+        <!-- 项目描述 -->
+        <result column="description" property="description"/>
+        <!-- 项目语言(如 Java Node Go PHP) -->
+        <result column="`language`" property="language"/>
+        <!-- 代码仓库地址 -->
+        <result column="repository_url" property="repositoryUrl"/>
+        <!-- 代码仓库版本管理方式(如 GIT SVN) -->
+        <result column="repository_type" property="repositoryType"/>
+        <!-- 代码仓库授权类型(0：不需要授权；1：用户名密码；) -->
+        <result column="authorization_type" property="authorizationType"/>
+        <!-- 代码仓库授权信息 -->
+        <result column="authorization_info" property="authorizationInfo"/>
+    </resultMap>
+
+    <select id="getByProjectName" resultMap="BaseResultMap">
+        SELECT * FROM code_repository WHERE project_name=#{projectName}
+    </select>
+</mapper>
