@@ -72,7 +72,7 @@ public class ImageConfig extends DataEntity {
     private Character buildState;
 
     /**
-     * 服务访问域名
+     * Docker镜像ID
      */
     private String imageId;
 
@@ -95,4 +95,32 @@ public class ImageConfig extends DataEntity {
      * 镜像说明
      */
     private String description;
+
+    /**
+     * 代码branch或Tag
+     */
+    @Data
+    public static class GitBranch {
+        /**
+         * 代码提交ID(commitID)
+         */
+        private String commitId;
+
+        /**
+         * 代码branch或Tag
+         */
+        private String branch;
+
+        public GitBranch() {
+        }
+
+        /**
+         * @param commitId 代码提交ID(commitID)
+         * @param branch   代码branch或Tag
+         */
+        public GitBranch(String commitId, String branch) {
+            this.commitId = commitId;
+            this.branch = branch;
+        }
+    }
 }

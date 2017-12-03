@@ -48,4 +48,8 @@
         <!-- 镜像说明 -->
         <result column="description" property="description"/>
     </resultMap>
+
+    <select id="getByRepositoryId" resultMap="BaseResultMap">
+        SELECT * FROM image_config WHERE repository_id=#{repositoryId} AND commit_id=#{commitId}
+    </select>
 </mapper>

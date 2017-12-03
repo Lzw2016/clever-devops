@@ -63,7 +63,7 @@ CREATE TABLE image_config
     server_url              varchar(255)    NOT NULL                            COMMENT '服务访问域名',
     server_count            int             NOT NULL    DEFAULT 1               COMMENT '默认运行实例数',
     build_state             char(1)         NOT NULL    DEFAULT '0'             COMMENT '当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)',
-    image_id                varchar(255)    NOT NULL                            COMMENT '服务访问域名',
+    image_id                varchar(255)                                        COMMENT 'Docker镜像ID',
     build_start_time        datetime(3)                                         COMMENT '镜像开始构建时间',
     build_end_time          datetime(3)                                         COMMENT '镜像结束构建时间',
     build_logs              MediumText                                          COMMENT '镜像构建日志(代码下载、编译、构建镜像日志)',

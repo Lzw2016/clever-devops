@@ -9,6 +9,7 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import com.github.dockerjava.core.command.PullImageResultCallback;
 import lombok.extern.slf4j.Slf4j;
+import org.clever.common.server.service.BaseService;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -22,7 +23,7 @@ import java.util.Set;
  */
 @Service
 @Slf4j
-public class DockerService {
+public class DockerService extends BaseService {
     public void test01() throws IOException {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
                 .withDockerHost("tcp://192.168.166.130:2375")

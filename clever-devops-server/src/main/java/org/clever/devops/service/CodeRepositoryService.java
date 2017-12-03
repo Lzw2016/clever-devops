@@ -3,6 +3,7 @@ package org.clever.devops.service;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.clever.common.model.exception.BusinessException;
+import org.clever.common.server.service.BaseService;
 import org.clever.common.utils.mapper.BeanMapper;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.dto.request.CodeRepositoryAddDto;
@@ -23,7 +24,7 @@ import java.util.Objects;
  * 创建时间：2017-12-02 15:23 <br/>
  */
 @Service
-public class CodeRepositoryService {
+public class CodeRepositoryService extends BaseService {
 
     @Autowired
     private CodeRepositoryMapper codeRepositoryMapper;

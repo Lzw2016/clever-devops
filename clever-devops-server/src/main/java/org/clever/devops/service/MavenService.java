@@ -2,6 +2,7 @@ package org.clever.devops.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.cli.MavenCli;
+import org.clever.common.server.service.BaseService;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.io.IOException;
  */
 @Service
 @Slf4j
-public class MavenService {
+public class MavenService extends BaseService {
 
     private static final String settings = "D:\\ToolsSoftware\\Maven\\settings.xml";
 

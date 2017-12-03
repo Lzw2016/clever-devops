@@ -42,7 +42,7 @@ public class Test02 {
                 .setRemote(remote)
 //                .setCredentialsProvider(new UsernamePasswordCredentialsProvider("Lzw2016", ""))
                 .setHeads(true)
-//                .setTags(true)
+                .setTags(true)
                 .call();
         for (Ref ref : refs) {
             log.info("####　{} | {}", ref.getName(), ref.getObjectId().getName());
