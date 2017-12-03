@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
 import org.clever.devops.dto.request.ImageConfigAddDto;
 import org.clever.devops.dto.request.ImageConfigQueryDto;
+import org.clever.devops.dto.request.ImageConfigUpdateDto;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.service.ImageConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,5 +43,9 @@ public class ImageConfigController extends BaseController {
         return imageConfigService.getImageConfig(serverUrl);
     }
 
-
+    @ApiOperation("更新Docker镜像配置")
+    @PutMapping("/image_config/{id}" + JSON_SUFFIX)
+    public ImageConfig updateImageConfig(@PathVariable("id") Long id, @RequestBody @Validated ImageConfigUpdateDto imageConfigUpdateDto) {
+        return imageConfigService.updateImageConfig(id, imageConfigUpdateDto);
+    }
 }

@@ -110,7 +110,7 @@ public class GitUtils {
                 return new ImageConfig.GitBranch(ref.getObjectId().getName(), ref.getName());
             }
         }
-        throw new BusinessException(String.format("代码仓库“branch或Tag”不存在，branch=%1$s", branch));
+        return null;
     }
 
     /**
@@ -128,7 +128,7 @@ public class GitUtils {
                 return new ImageConfig.GitBranch(ref.getObjectId().getName(), ref.getName());
             }
         }
-        throw new BusinessException(String.format("代码仓库“branch或Tag”不存在，branch=%1$s", branch));
+        return null;
     }
 }
 

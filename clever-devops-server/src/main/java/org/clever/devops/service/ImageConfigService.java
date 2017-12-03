@@ -9,6 +9,7 @@ import org.clever.common.utils.mapper.BeanMapper;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.dto.request.ImageConfigAddDto;
 import org.clever.devops.dto.request.ImageConfigQueryDto;
+import org.clever.devops.dto.request.ImageConfigUpdateDto;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
@@ -51,7 +52,10 @@ public class ImageConfigService extends BaseService {
                 codeRepository.getAuthorizationType().toString(),
                 codeRepository.getAuthorizationInfo(),
                 imageConfigAddDto.getBranch());
-        // 镜像配置已经存在
+        if (gitBranch == null) {
+            throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigAddDto.getBranch()));
+        }
+        // 校验镜像配置已经存在
         ImageConfig tmp = imageConfigMapper.getByRepositoryId(imageConfigAddDto.getRepositoryId(), gitBranch.getCommitId());
         if (tmp != null) {
             throw new BusinessException(String.format("Docker镜像配置已经存在，RepositoryId=%1$s, CommitId=%2$s", imageConfigAddDto.getRepositoryId(), gitBranch.getCommitId()));
@@ -87,7 +91,58 @@ public class ImageConfigService extends BaseService {
     }
 
     /**
-     * 获取“branch或Tag”信息
+     * 更新Docker镜像配置
+     */
+    @Transactional
+    public ImageConfig updateImageConfig(Long id, ImageConfigUpdateDto imageConfigUpdateDto) {
+        // 查询需要更新的数据
+        ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(id);
+        if (imageConfig == null) {
+            throw new BusinessException(String.format("Docker镜像配置不存在，ID=%1$s", id));
+        }
+        // 跟新了 Branch ，需要校验
+        if (imageConfigUpdateDto.getBranch() != null && !Objects.equals(imageConfig.getBranch(), imageConfigUpdateDto.getBranch())) {
+            // 获取代码仓库信息
+            CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfig.getRepositoryId());
+            if (codeRepository == null) {
+                throw new BusinessException(String.format("代码仓库不存在，RepositoryId=%1$s", imageConfig.getRepositoryId()));
+            }
+            // 校验代码仓库“branch或Tag”是否存在
+            ImageConfig.GitBranch gitBranch = branchIsExists(
+                    codeRepository.getRepositoryUrl(),
+                    codeRepository.getAuthorizationType().toString(),
+                    codeRepository.getAuthorizationInfo(),
+                    imageConfigUpdateDto.getBranch());
+            if (gitBranch == null) {
+                throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigUpdateDto.getBranch()));
+            }
+            // 校验镜像配置已经存在
+            ImageConfig tmp = imageConfigMapper.getByRepositoryId(imageConfig.getRepositoryId(), imageConfig.getCommitId());
+            if (tmp != null && !Objects.equals(imageConfig.getId(), tmp.getId())) {
+                throw new BusinessException(String.format("Docker镜像配置已经存在，RepositoryId=%1$s, CommitId=%2$s", imageConfig.getRepositoryId(), imageConfig.getCommitId()));
+            }
+            // 更新 CommitId
+            imageConfig.setCommitId(gitBranch.getCommitId());
+        }
+        // 更新了 serverUrl，需要校验
+        if (imageConfigUpdateDto.getServerUrl() != null) {
+            // 校验 serverUrl 唯一
+            ImageConfig tmp = imageConfigMapper.getByServerUrl(imageConfigUpdateDto.getServerUrl());
+            if (tmp != null && !Objects.equals(imageConfig.getId(), tmp.getId())) {
+                throw new BusinessException(String.format("服务访问域名重复，ServerUrl=%1$s", imageConfigUpdateDto.getServerUrl()));
+            }
+        }
+        // 更新数据
+        BeanMapper.copyTo(imageConfigUpdateDto, imageConfig);
+        imageConfig.setUpdateBy("");
+        imageConfig.setUpdateDate(new Date());
+        imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
+        imageConfig = imageConfigMapper.selectByPrimaryKey(id);
+        return imageConfig;
+    }
+
+    /**
+     * 获取“branch或Tag”信息<br/>
      *
      * @param repositoryUrl     代码仓库地址
      * @param authorizationType 代码仓库授权类型(0：不需要授权；1：用户名密码；)
