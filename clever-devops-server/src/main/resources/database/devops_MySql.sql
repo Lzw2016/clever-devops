@@ -60,7 +60,7 @@ CREATE TABLE image_config
     build_cmd               varchar(2047)   NOT NULL                            COMMENT '代码编译命令(例如 mvn clean install)',
     docker_file_path        varchar(255)    NOT NULL                            COMMENT 'Dockerfile文件相对路径(默认 ./Dockerfile)',
     server_ports            varchar(255)                                        COMMENT '服务需要的端口号(多个用“,”分隔)',
-    server_url              varchar(255)    NOT NULL                            COMMENT '服务访问域名',
+    server_url              varchar(255)    NOT NULL    UNIQUE                  COMMENT '服务访问域名',
     server_count            int             NOT NULL    DEFAULT 1               COMMENT '默认运行实例数',
     build_state             char(1)         NOT NULL    DEFAULT '0'             COMMENT '当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)',
     image_id                varchar(255)                                        COMMENT 'Docker镜像ID',

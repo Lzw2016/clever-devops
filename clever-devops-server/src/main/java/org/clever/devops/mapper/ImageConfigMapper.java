@@ -2,7 +2,10 @@ package org.clever.devops.mapper;
 
 import org.apache.ibatis.annotations.Param;
 import org.clever.common.server.mapper.CustomMapper;
+import org.clever.devops.dto.request.ImageConfigQueryDto;
 import org.clever.devops.entity.ImageConfig;
+
+import java.util.List;
 
 /**
  * 作者： lzw<br/>
@@ -15,4 +18,11 @@ public interface ImageConfigMapper extends CustomMapper<ImageConfig> {
      * @param commitId     代码提交ID(commitID)
      */
     ImageConfig getByRepositoryId(@Param("repositoryId") Long repositoryId, @Param("commitId") String commitId);
+
+    /**
+     * @param serverUrl 服务访问域名
+     */
+    ImageConfig getByServerUrl(@Param("serverUrl") String serverUrl);
+
+    List<ImageConfig> findImageConfig(ImageConfigQueryDto imageConfigQueryDto);
 }

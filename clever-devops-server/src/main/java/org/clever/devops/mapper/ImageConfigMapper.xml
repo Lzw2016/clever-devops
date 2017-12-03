@@ -52,4 +52,36 @@
     <select id="getByRepositoryId" resultMap="BaseResultMap">
         SELECT * FROM image_config WHERE repository_id=#{repositoryId} AND commit_id=#{commitId}
     </select>
+
+    <select id="getByServerUrl" resultMap="BaseResultMap">
+        SELECT * FROM image_config WHERE server_url=#{serverUrl}
+    </select>
+
+    <select id="findImageConfig" resultMap="BaseResultMap">
+        SELECT *
+        FROM image_config
+        WHERE 1=1
+        <if test="repositoryId!='' and repositoryId!=null">
+            AND repository_id = #{repositoryId}
+        </if>
+        <if test="branch!='' and branch!=null">
+            AND branch = #{branch}
+        </if>
+        <if test="commitId!='' and commitId!=null">
+            AND commit_id = #{commitId}
+        </if>
+        <if test="buildType!='' and buildType!=null">
+            AND build_type = #{buildType}
+        </if>
+        <if test="buildCmd!='' and buildCmd!=null">
+            AND build_cmd LIKE CONCAT('%', #{buildCmd}, '%')
+        </if>
+        <if test="serverPorts!='' and serverPorts!=null">
+            AND server_ports LIKE CONCAT('%', #{serverPorts}, '%')
+        </if>
+        <if test="serverUrl!='' and serverUrl!=null">
+            AND server_url LIKE CONCAT(#{serverUrl}, '%')
+        </if>
+        ORDER BY server_url, create_date DESC
+    </select>
 </mapper>

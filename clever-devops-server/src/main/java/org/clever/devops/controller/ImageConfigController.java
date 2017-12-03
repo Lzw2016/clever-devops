@@ -1,17 +1,16 @@
 package org.clever.devops.controller;
 
+import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
 import org.clever.devops.dto.request.ImageConfigAddDto;
+import org.clever.devops.dto.request.ImageConfigQueryDto;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.service.ImageConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 作者： lzw<br/>
@@ -30,4 +29,18 @@ public class ImageConfigController extends BaseController {
     public ImageConfig addImageConfig(@RequestBody @Validated ImageConfigAddDto imageConfigAddDto) {
         return imageConfigService.addImageConfig(imageConfigAddDto);
     }
+
+    @ApiOperation("查询Docker镜像配置")
+    @GetMapping("/image_config" + JSON_SUFFIX)
+    public PageInfo<ImageConfig> findImageConfig(ImageConfigQueryDto imageConfigQueryDto) {
+        return imageConfigService.findImageConfig(imageConfigQueryDto);
+    }
+
+    @ApiOperation("获取Docker镜像配置")
+    @GetMapping("/image_config/{serverUrl}" + JSON_SUFFIX)
+    public ImageConfig getImageConfig(@PathVariable("serverUrl") String serverUrl) {
+        return imageConfigService.getImageConfig(serverUrl);
+    }
+
+
 }

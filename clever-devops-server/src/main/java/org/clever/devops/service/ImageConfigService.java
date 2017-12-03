@@ -1,11 +1,14 @@
 package org.clever.devops.service;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.model.exception.BusinessException;
 import org.clever.common.server.service.BaseService;
 import org.clever.common.utils.mapper.BeanMapper;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.dto.request.ImageConfigAddDto;
+import org.clever.devops.dto.request.ImageConfigQueryDto;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
@@ -53,6 +56,11 @@ public class ImageConfigService extends BaseService {
         if (tmp != null) {
             throw new BusinessException(String.format("Docker镜像配置已经存在，RepositoryId=%1$s, CommitId=%2$s", imageConfigAddDto.getRepositoryId(), gitBranch.getCommitId()));
         }
+        // 校验 serverUrl 唯一
+        tmp = imageConfigMapper.getByServerUrl(imageConfigAddDto.getServerUrl());
+        if (tmp != null) {
+            throw new BusinessException(String.format("服务访问域名重复，ServerUrl=%1$s", imageConfigAddDto.getServerUrl()));
+        }
         // 保存数据
         ImageConfig imageConfig = BeanMapper.mapper(imageConfigAddDto, ImageConfig.class);
         imageConfig.setCommitId(gitBranch.getCommitId());
@@ -62,6 +70,21 @@ public class ImageConfigService extends BaseService {
         return imageConfig;
     }
 
+    /**
+     * 查询代码仓库
+     */
+    public PageInfo<ImageConfig> findImageConfig(ImageConfigQueryDto imageConfigQueryDto) {
+        return PageHelper
+                .startPage(imageConfigQueryDto.getPageNo(), imageConfigQueryDto.getPageSize())
+                .doSelectPageInfo(() -> imageConfigMapper.findImageConfig(imageConfigQueryDto));
+    }
+
+    /**
+     * 获取Docker镜像配置
+     */
+    public ImageConfig getImageConfig(String serverUrl) {
+        return imageConfigMapper.getByServerUrl(serverUrl);
+    }
 
     /**
      * 获取“branch或Tag”信息
