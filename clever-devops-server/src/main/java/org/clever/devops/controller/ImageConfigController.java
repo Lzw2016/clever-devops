@@ -48,4 +48,10 @@ public class ImageConfigController extends BaseController {
     public ImageConfig updateImageConfig(@PathVariable("id") Long id, @RequestBody @Validated ImageConfigUpdateDto imageConfigUpdateDto) {
         return imageConfigService.updateImageConfig(id, imageConfigUpdateDto);
     }
+
+    @ApiOperation("删除Docker镜像配置")
+    @DeleteMapping("/image_config/{id}" + JSON_SUFFIX)
+    public ImageConfig delete(@PathVariable("id") Long id) {
+        return imageConfigService.delete(id);
+    }
 }

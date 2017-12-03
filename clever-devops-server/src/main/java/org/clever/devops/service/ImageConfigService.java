@@ -142,6 +142,20 @@ public class ImageConfigService extends BaseService {
     }
 
     /**
+     * 删除Docker镜像配置
+     */
+    public ImageConfig delete(Long id) {
+        ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(id);
+        if (imageConfig == null) {
+            throw new BusinessException(String.format("Docker镜像配置不存在，ID=%1$s", id));
+        }
+        // 校验当前Docker镜像配置是否被依赖
+
+        // TODO 删除Docker镜像配置
+        return imageConfig;
+    }
+
+    /**
      * 获取“branch或Tag”信息<br/>
      *
      * @param repositoryUrl     代码仓库地址
