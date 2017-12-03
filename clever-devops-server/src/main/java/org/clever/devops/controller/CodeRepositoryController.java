@@ -7,6 +7,7 @@ import org.clever.common.server.controller.BaseController;
 import org.clever.devops.dto.request.CodeRepositoryAddDto;
 import org.clever.devops.dto.request.CodeRepositoryQueryDto;
 import org.clever.devops.dto.request.CodeRepositoryUpdateDto;
+import org.clever.devops.dto.request.TestGitConnectDto;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.service.CodeRepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,5 +54,11 @@ public class CodeRepositoryController extends BaseController {
     @DeleteMapping("/code_repository/{projectName}" + JSON_SUFFIX)
     public CodeRepository delete(@PathVariable("projectName") String projectName) {
         return codeRepositoryService.delete(projectName);
+    }
+
+    @ApiOperation("测试连接Git仓库")
+    @PostMapping("/git_connect" + JSON_SUFFIX)
+    public void testGitConnect(@RequestBody @Validated TestGitConnectDto testGitConnectDto) {
+        codeRepositoryService.testConnect(testGitConnectDto.getRepositoryUrl(), testGitConnectDto.getAuthorizationType(), testGitConnectDto.getAuthorizationInfo());
     }
 }

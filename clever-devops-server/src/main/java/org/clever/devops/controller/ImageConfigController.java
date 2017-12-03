@@ -4,6 +4,7 @@ import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
+import org.clever.devops.dto.request.GetGitBranchDto;
 import org.clever.devops.dto.request.ImageConfigAddDto;
 import org.clever.devops.dto.request.ImageConfigQueryDto;
 import org.clever.devops.dto.request.ImageConfigUpdateDto;
@@ -53,5 +54,15 @@ public class ImageConfigController extends BaseController {
     @DeleteMapping("/image_config/{id}" + JSON_SUFFIX)
     public ImageConfig delete(@PathVariable("id") Long id) {
         return imageConfigService.delete(id);
+    }
+
+    @ApiOperation("获取“branch或Tag”信息")
+    @PostMapping("/git_branch" + JSON_SUFFIX)
+    public ImageConfig.GitBranch getGitBranch(@RequestBody @Validated GetGitBranchDto getGitBranchDto) {
+        return imageConfigService.getBranch(
+                getGitBranchDto.getRepositoryUrl(),
+                getGitBranchDto.getAuthorizationType(),
+                getGitBranchDto.getAuthorizationInfo(),
+                getGitBranchDto.getBranch());
     }
 }

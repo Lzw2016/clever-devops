@@ -133,7 +133,7 @@ public class CodeRepositoryService extends BaseService {
      * @param authorizationType 代码仓库授权类型(0：不需要授权；1：用户名密码；)
      * @param authorizationInfo 代码仓库授权信息
      */
-    private void testConnect(String repositoryUrl, String authorizationType, String authorizationInfo) {
+    public void testConnect(String repositoryUrl, String authorizationType, String authorizationInfo) {
         if (Objects.equals(CodeRepository.Authorization_Type_0.toString(), authorizationType)) {
             // 没有访问限制
             GitUtils.testConnect(repositoryUrl);

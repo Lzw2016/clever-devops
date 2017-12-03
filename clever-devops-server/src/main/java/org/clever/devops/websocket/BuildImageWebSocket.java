@@ -11,14 +11,14 @@ import java.util.concurrent.CopyOnWriteArraySet;
 /**
  * 使用Git下载代码
  */
-@ServerEndpoint("/git")
 @Component
+@ServerEndpoint("/build_image")
 @Slf4j
-public class GitWebSocket {
+public class BuildImageWebSocket {
     /**
      * 所有连接对象
      */
-    private static CopyOnWriteArraySet<GitWebSocket> webSocketSet = new CopyOnWriteArraySet<>();
+    private static CopyOnWriteArraySet<BuildImageWebSocket> webSocketSet = new CopyOnWriteArraySet<>();
 
     /**
      * 当前连接Session
@@ -59,7 +59,7 @@ public class GitWebSocket {
     public void onMessage(String message, Session session) throws IOException {
         System.out.println("来自客户端的消息:  | [" + webSocketSet.size() + "] | " + message);
         // 群发消息
-        for (GitWebSocket item : webSocketSet) {
+        for (BuildImageWebSocket item : webSocketSet) {
             item.sendMessage("[" + webSocketSet.size() + "] | " + message);
         }
     }

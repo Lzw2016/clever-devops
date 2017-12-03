@@ -47,7 +47,7 @@ public class ImageConfigService extends BaseService {
             throw new BusinessException(String.format("代码仓库不存在，RepositoryId=%1$s", imageConfigAddDto.getRepositoryId()));
         }
         // 校验代码仓库“branch或Tag”是否存在
-        ImageConfig.GitBranch gitBranch = branchIsExists(
+        ImageConfig.GitBranch gitBranch = getBranch(
                 codeRepository.getRepositoryUrl(),
                 codeRepository.getAuthorizationType().toString(),
                 codeRepository.getAuthorizationInfo(),
@@ -108,7 +108,7 @@ public class ImageConfigService extends BaseService {
                 throw new BusinessException(String.format("代码仓库不存在，RepositoryId=%1$s", imageConfig.getRepositoryId()));
             }
             // 校验代码仓库“branch或Tag”是否存在
-            ImageConfig.GitBranch gitBranch = branchIsExists(
+            ImageConfig.GitBranch gitBranch = getBranch(
                     codeRepository.getRepositoryUrl(),
                     codeRepository.getAuthorizationType().toString(),
                     codeRepository.getAuthorizationInfo(),
@@ -163,7 +163,7 @@ public class ImageConfigService extends BaseService {
      * @param authorizationInfo 代码仓库授权信息
      * @param branch            branch或Tag
      */
-    private ImageConfig.GitBranch branchIsExists(String repositoryUrl, String authorizationType, String authorizationInfo, String branch) {
+    public ImageConfig.GitBranch getBranch(String repositoryUrl, String authorizationType, String authorizationInfo, String branch) {
         if (Objects.equals(CodeRepository.Authorization_Type_0.toString(), authorizationType)) {
             // 没有访问限制
             return GitUtils.getBranch(repositoryUrl, branch);
