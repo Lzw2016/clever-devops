@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.clever.common.model.request.BaseRequest;
 import org.hibernate.validator.constraints.Length;
-import org.hibernate.validator.constraints.NotEmpty;
+import org.hibernate.validator.constraints.NotBlank;
 
 import javax.validation.constraints.Pattern;
 
@@ -21,7 +21,7 @@ public class GetGitBranchDto extends BaseRequest {
      * 代码仓库地址
      */
     @ApiModelProperty("代码仓库地址")
-    @NotEmpty
+    @NotBlank
     @Length(max = 1023)
     private String repositoryUrl;
 
@@ -29,7 +29,7 @@ public class GetGitBranchDto extends BaseRequest {
      * 代码仓库授权类型(0：不需要授权；1：用户名密码；)
      */
     @ApiModelProperty("代码仓库授权类型(0：不需要授权；1：用户名密码；)")
-    @NotEmpty
+    @NotBlank
     @Pattern(regexp = "[01]")
     private String authorizationType;
 
@@ -43,7 +43,7 @@ public class GetGitBranchDto extends BaseRequest {
      * 代码branch或Tag
      */
     @ApiModelProperty("代码branch或Tag")
-    @NotEmpty
+    @NotBlank
     @Length(max = 63)
     private String branch;
 }

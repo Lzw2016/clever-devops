@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.clever.common.model.request.BaseRequest;
 import org.hibernate.validator.constraints.Length;
-import org.hibernate.validator.constraints.NotEmpty;
+import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.Range;
 
 import javax.validation.constraints.NotNull;
@@ -34,7 +34,7 @@ public class ImageConfigAddDto extends BaseRequest {
      * 代码branch或Tag
      */
     @ApiModelProperty("代码branch或Tag")
-    @NotEmpty
+    @NotBlank
     @Length(max = 63)
     private String branch;
 
@@ -42,7 +42,7 @@ public class ImageConfigAddDto extends BaseRequest {
      * 代码编译方式(Maven npm go)
      */
     @ApiModelProperty("代码编译方式(Maven npm go)")
-    @NotEmpty
+    @NotBlank
     @Pattern(regexp = "Maven|npm")
     private String buildType;
 
@@ -50,7 +50,7 @@ public class ImageConfigAddDto extends BaseRequest {
      * 代码编译命令(例如 mvn clean install)
      */
     @ApiModelProperty("代码编译命令(例如 mvn clean install)")
-    @NotEmpty
+    @NotBlank
     @Length(max = 2047)
     private String buildCmd;
 
@@ -58,7 +58,7 @@ public class ImageConfigAddDto extends BaseRequest {
      * Dockerfile文件相对路径(默认 ./Dockerfile)
      */
     @ApiModelProperty("Dockerfile文件相对路径(默认 ./Dockerfile)")
-    @NotEmpty
+    @NotBlank
     @Length(max = 255)
     private String dockerFilePath;
 
@@ -73,7 +73,7 @@ public class ImageConfigAddDto extends BaseRequest {
      * 服务访问域名
      */
     @ApiModelProperty("服务访问域名")
-    @NotEmpty
+    @NotBlank
     @Length(max = 255)
     private String serverUrl;
 

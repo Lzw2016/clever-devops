@@ -4,8 +4,9 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
 import org.clever.common.model.request.BaseRequest;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * 构建镜像的请求
@@ -22,7 +23,7 @@ public class BuildImageReqDto extends BaseRequest {
      * 镜像配置ID
      */
     @ApiModelProperty("镜像配置ID")
-    @NonNull
+    @NotNull
     private Long imageConfigId;
 
 

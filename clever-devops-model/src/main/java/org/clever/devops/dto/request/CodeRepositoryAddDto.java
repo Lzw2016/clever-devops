@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.clever.common.model.request.BaseRequest;
 import org.hibernate.validator.constraints.Length;
-import org.hibernate.validator.constraints.NotEmpty;
+import org.hibernate.validator.constraints.NotBlank;
 
 import javax.validation.constraints.Pattern;
 
@@ -25,7 +25,7 @@ public class CodeRepositoryAddDto extends BaseRequest {
      * 项目名称
      */
     @ApiModelProperty("项目名称")
-    @NotEmpty
+    @NotBlank
     @Length(max = 255)
     private String projectName;
 
@@ -40,7 +40,7 @@ public class CodeRepositoryAddDto extends BaseRequest {
      * 项目语言(如 Java Node Go PHP)
      */
     @ApiModelProperty("项目语言(如 Java Node Go PHP)")
-    @NotEmpty
+    @NotBlank
     @Pattern(regexp = "Java|Node|Go|PHP")
     private String language;
 
@@ -48,7 +48,7 @@ public class CodeRepositoryAddDto extends BaseRequest {
      * 代码仓库地址
      */
     @ApiModelProperty("代码仓库地址")
-    @NotEmpty
+    @NotBlank
     @Length(max = 1023)
     private String repositoryUrl;
 
@@ -56,7 +56,7 @@ public class CodeRepositoryAddDto extends BaseRequest {
      * 代码仓库版本管理方式(如 GIT SVN)
      */
     @ApiModelProperty("代码仓库版本管理方式(如 GIT SVN)")
-    @NotEmpty
+    @NotBlank
     @Pattern(regexp = "GIT|SVN")
     private String repositoryType;
 
@@ -64,7 +64,7 @@ public class CodeRepositoryAddDto extends BaseRequest {
      * 代码仓库授权类型(0：不需要授权；1：用户名密码；)
      */
     @ApiModelProperty("代码仓库授权类型(0：不需要授权；1：用户名密码；)")
-    @NotEmpty
+    @NotBlank
     @Pattern(regexp = "[01]")
     private String authorizationType;
 
