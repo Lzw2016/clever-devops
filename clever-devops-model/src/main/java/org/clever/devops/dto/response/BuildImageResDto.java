@@ -42,6 +42,16 @@ public class BuildImageResDto extends BaseResponse {
     private Integer buildState;
 
     /**
+     * 是否已经完成
+     */
+    private Boolean isComplete = false;
+
+    /**
+     * 完成消息
+     */
+    private String completeMsg;
+
+    /**
      * 日志信息
      */
     private String logText;

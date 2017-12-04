@@ -1,6 +1,7 @@
 package org.clever.devops.websocket;
 
 import lombok.extern.slf4j.Slf4j;
+import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.config.GlobalConfig;
 import org.clever.devops.dto.request.BuildImageReqDto;
@@ -10,6 +11,7 @@ import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
@@ -27,6 +29,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @ServerEndpoint("/build_image")
 @Slf4j
 public class BuildImageService {
+
+    private static String Start_Image_CMD = "";
+
     /**
      * 所有连接对象
      */
@@ -61,14 +66,19 @@ public class BuildImageService {
     private ImageConfigMapper imageConfigMapper;
 
     /**
-     * 当前连接Session
-     */
-    private Session session;
-
-    /**
      * 需要关闭当前连接
      */
     private boolean closeFlag = false;
+
+    /**
+     * 响应发送数据
+     */
+    private BuildImageResDto buildImageResDto = new BuildImageResDto();
+
+    /**
+     * 当前连接Session
+     */
+    private Session session;
 
     /**
      * 当前操作的“代码仓库”
@@ -81,12 +91,6 @@ public class BuildImageService {
     private ImageConfig imageConfig;
 
     /**
-     * 响应发送数据
-     */
-    private BuildImageResDto buildImageResDto;
-
-
-    /**
      * 连接成功事件
      */
     @OnOpen
@@ -96,28 +100,9 @@ public class BuildImageService {
         buildImageTask.add(this);
         // 校验任务数量是否超过了限制
         if (buildImageTask.size() >= globalConfig.getMaxBuildImageTask()) {
-            closeFlag = true;
-            // TODO 发送提示信息
+            sendCompleteMessage(String.format("当前构建镜像数据已达到最大值:%1$s，请稍候再试", globalConfig.getMaxBuildImageTask()));
         }
-        // 关闭校验未通过的连接
-        closeSession();
-    }
-
-    /**
-     * 连接关闭事件
-     */
-    @OnClose
-    public void onClose() {
-        buildImageTask.remove(this);
-        System.out.println("有一链接关闭!当前在线人数为" + buildImageTask.size());
-    }
-
-    /**
-     * 发生异常时调用
-     */
-    @OnError
-    public void onError(Session session, Throwable error) {
-        log.error("发生错误 -> {}", error);
+        buildImageResDto.setBuildImageTaskCount(buildImageTask.size());
     }
 
     /**
@@ -125,33 +110,85 @@ public class BuildImageService {
      */
     @OnMessage
     public void onMessage(String message, Session session) throws IOException {
-        System.out.println("来自客户端的消息:  | [" + buildImageTask.size() + "] | " + message);
-        // 群发消息
-//        for (BuildImageService item : buildImageTask) {
-//            item.sendMessage("[" + buildImageTask.size() + "] | " + message);
-//        }
-//
-//        for (int i = 0; i < 100; i++) {
-//            this.sendMessage("服务端消息：i = " + i);
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
+        BuildImageReqDto buildImageReqDto = JacksonMapper.nonEmptyMapper().fromJson(message, BuildImageReqDto.class);
+        if (buildImageReqDto == null) {
+            sendCompleteMessage(String.format("当前构建镜像数据已达到最大值:%1$s，请稍候再试", globalConfig.getMaxBuildImageTask()));
+            return;
+        }
+        // 校验参数 BuildImageReqDto 的完整性
+
+        // 业务校验
+        imageConfig = imageConfigMapper.selectByPrimaryKey(buildImageReqDto.getImageConfigId());
+        if (imageConfig == null) {
+            sendCompleteMessage(String.format("Docker镜像配置不存在，ImageConfigId=%1$s", buildImageReqDto.getImageConfigId()));
+            return;
+        }
+        codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfig.getRepositoryId());
+        if (codeRepository == null) {
+            sendCompleteMessage(String.format("代码仓库不存在，ImageConfigId=%1$s", imageConfig.getRepositoryId()));
+            return;
+        }
+
+        // 开始异步构建镜像
+        buildImageResDto.setStartTime(System.currentTimeMillis());
+
+        buildImage(buildImageReqDto);
+    }
+
+    /**
+     * 连接关闭事件
+     */
+    @OnClose
+    public void onClose() {
+        closeFlag = true;
+        closeSession();
+    }
+
+    /**
+     * 发生异常时调用
+     */
+    @OnError
+    public void onError(Session session, Throwable error) {
+        log.error(String.format("构建镜像异常 SessionID=[%1$s]", session.getId()), error);
+        sendCompleteMessage(String.format("发生错误 -> [%1$s]", error.getMessage()));
     }
 
     /**
      * 开始构建镜像
      */
-    private void buildImage(BuildImageReqDto buildImageReqDto) {
+    @Async
+    protected void buildImage(BuildImageReqDto buildImageReqDto) {
+        sendMessage("");
+    }
 
+    /**
+     * 1.发送一个消息 <br/>
+     * 2.服务端主动关闭连接 <br/>
+     *
+     * @param message 失败的消息
+     */
+    private void sendCompleteMessage(String message) {
+        buildImageResDto.setIsComplete(true);
+        buildImageResDto.setCompleteMsg(message);
+        try {
+            session.getBasicRemote().sendText(JacksonMapper.nonEmptyMapper().toJson(buildImageResDto));
+        } catch (Throwable e) {
+            throw ExceptionUtils.unchecked(e);
+        }
+        closeFlag = true;
+        // 关闭所有“closeFlag=true”的连接
+        closeSession();
     }
 
     /**
      * 发送消息
      */
-    private void sendMessage(BuildImageResDto message) throws IOException {
-        this.session.getBasicRemote().sendText(JacksonMapper.nonEmptyMapper().toJson(message));
+    private void sendMessage(String logText) {
+        buildImageResDto.setLogText(logText);
+        try {
+            this.session.getBasicRemote().sendText(JacksonMapper.nonEmptyMapper().toJson(buildImageResDto));
+        } catch (IOException e) {
+            throw ExceptionUtils.unchecked(e);
+        }
     }
 }

@@ -25,6 +25,4 @@ public class BuildImageReqDto extends BaseRequest {
     @ApiModelProperty("镜像配置ID")
     @NotNull
     private Long imageConfigId;
-
-
 }
