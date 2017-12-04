@@ -26,6 +26,10 @@
             <groupId>org.clever</groupId>
             <artifactId>clever-devops-model</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
         <!--依赖包-->
         <dependency>
             <groupId>com.github.docker-java</groupId>

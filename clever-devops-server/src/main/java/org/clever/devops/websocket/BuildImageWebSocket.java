@@ -9,7 +9,8 @@ import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * 使用Git下载代码
+ * 使用Git下载代码<br/>
+ * 每个连接都会新增一个该类型的实例
  */
 @Component
 @ServerEndpoint("/build_image")
@@ -25,6 +26,8 @@ public class BuildImageWebSocket {
      */
     private Session session;
 
+    private int count = 0;
+
     /**
      * 连接成功事件
      */
@@ -33,6 +36,9 @@ public class BuildImageWebSocket {
         this.session = session;
         webSocketSet.add(this);
         System.out.println("有新链接加入!当前在线人数为" + webSocketSet.size());
+
+        count++;
+        log.info("count = {}", count);
     }
 
     /**
@@ -61,6 +67,15 @@ public class BuildImageWebSocket {
         // 群发消息
         for (BuildImageWebSocket item : webSocketSet) {
             item.sendMessage("[" + webSocketSet.size() + "] | " + message);
+        }
+
+        for (int i = 0; i < 100; i++) {
+            this.sendMessage("服务端消息：i = " + i);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
