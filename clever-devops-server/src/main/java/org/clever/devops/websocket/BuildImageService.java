@@ -12,12 +12,9 @@ import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
-import org.springframework.web.context.support.SpringBeanAutowiringSupport;
+import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
-import javax.annotation.PostConstruct;
 import javax.websocket.*;
-import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +23,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * 构建Docker 镜像服务<br/>
- * 每个连接都会新增一个该类型的实例
+ * 每个连接都会新增一个该类型的实例 BuildImage
  */
-@Component
-@ServerEndpoint("/build_image")
 @Slf4j
 public class BuildImageService {
 
@@ -143,6 +138,8 @@ public class BuildImageService {
         buildImageResDto.setImageConfig(imageConfig);
         buildImageResDto.setCodeRepository(codeRepository);
         buildImage(buildImageReqDto);
+
+        AbstractWebSocketHandler abstractWebSocketHandler;
     }
 
     /**
