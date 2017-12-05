@@ -13,12 +13,15 @@ import org.clever.devops.mapper.ImageConfigMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
+import javax.annotation.PostConstruct;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -64,7 +67,6 @@ public class BuildImageService {
     private CodeRepositoryMapper codeRepositoryMapper;
     @Autowired
     private ImageConfigMapper imageConfigMapper;
-
     /**
      * 需要关闭当前连接
      */
@@ -102,7 +104,6 @@ public class BuildImageService {
         if (buildImageTask.size() >= globalConfig.getMaxBuildImageTask()) {
             sendCompleteMessage(String.format("当前构建镜像数据已达到最大值:%1$s，请稍候再试", globalConfig.getMaxBuildImageTask()));
         }
-        buildImageResDto.setBuildImageTaskCount(buildImageTask.size());
     }
 
     /**
@@ -123,6 +124,13 @@ public class BuildImageService {
             sendCompleteMessage(String.format("Docker镜像配置不存在，ImageConfigId=%1$s", buildImageReqDto.getImageConfigId()));
             return;
         }
+        // 当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)
+        if (Objects.equals(ImageConfig.buildState_1, imageConfig.getBuildState())
+                || Objects.equals(ImageConfig.buildState_2, imageConfig.getBuildState())
+                || Objects.equals(ImageConfig.buildState_3, imageConfig.getBuildState())) {
+            sendCompleteMessage(String.format("当前镜像正在构建，ImageConfigId=%1$s", imageConfig.getRepositoryId()));
+            return;
+        }
         codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfig.getRepositoryId());
         if (codeRepository == null) {
             sendCompleteMessage(String.format("代码仓库不存在，ImageConfigId=%1$s", imageConfig.getRepositoryId()));
@@ -130,8 +138,10 @@ public class BuildImageService {
         }
 
         // 开始异步构建镜像
+        buildImageResDto.setBuildImageTaskCount(buildImageTask.size());
         buildImageResDto.setStartTime(System.currentTimeMillis());
-
+        buildImageResDto.setImageConfig(imageConfig);
+        buildImageResDto.setCodeRepository(codeRepository);
         buildImage(buildImageReqDto);
     }
 
@@ -158,7 +168,14 @@ public class BuildImageService {
      */
     @Async
     protected void buildImage(BuildImageReqDto buildImageReqDto) {
-        sendMessage("");
+        for (int i = 0; i < 10; i++) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            sendMessage("构建日志" + i);
+        }
     }
 
     /**

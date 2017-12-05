@@ -16,6 +16,36 @@ import java.util.Date;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class ImageConfig extends DataEntity {
+
+    /**
+     * 当前镜像构建状态(0：未构建)
+     */
+    public static final Character buildState_0 = '0';
+
+    /**
+     * 当前镜像构建状态(1：正在下载代码)
+     */
+    public static final Character buildState_1 = '1';
+
+    /**
+     * 当前镜像构建状态(2：正在编译代码)
+     */
+    public static final Character buildState_2 = '2';
+
+    /**
+     * 当前镜像构建状态(3：正在构建镜像)
+     */
+    public static final Character buildState_3 = '3';
+
+    /**
+     * 当前镜像构建状态(S：构建成功)
+     */
+    public static final Character buildState_S = 'S';
+    /**
+     * 当前镜像构建状态(F：构建失败)
+     */
+    public static final Character buildState_F = 'F';
+
     /**
      * 代码仓库ID
      */
