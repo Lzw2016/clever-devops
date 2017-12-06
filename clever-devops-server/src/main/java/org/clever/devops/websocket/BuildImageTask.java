@@ -19,7 +19,7 @@ import java.util.Set;
  * 创建时间：2017-12-06 10:12 <br/>
  */
 @Slf4j
-public class BuildImageTask implements Runnable {
+public class BuildImageTask extends Thread {
 
     /**
      * 连接当前任务的Session集合
@@ -134,9 +134,10 @@ public class BuildImageTask implements Runnable {
     private void sendCompleteMessage(String completeMessage) {
         allLogText.append(completeMessage);
         buildImageResDto.setCompleteMsg(completeMessage);
+        // TODO 保存数据库
+        // 发送消息
         sendMessage(buildImageResDto);
         // TODO 关闭所有连接
-
     }
 
     /**

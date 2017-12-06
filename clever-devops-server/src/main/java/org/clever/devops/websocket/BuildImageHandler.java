@@ -17,9 +17,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -42,6 +40,31 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
      * 所有构建镜像的任务 镜像配置ID -> 构建任务
      */
     private static final ConcurrentHashMap<Long, BuildImageTask> BUILD_IMAGE_TASK_MAP = new ConcurrentHashMap<>();
+
+    static {
+        // 守护线程
+        Thread thread = new Thread(() -> {
+            while (true) {
+                List<Long> rmList = new ArrayList<>();
+                for (ConcurrentHashMap.Entry<Long, BuildImageTask> entry : BUILD_IMAGE_TASK_MAP.entrySet()) {
+                    if (!entry.getValue().isAlive()) {
+                        // TODO 调用 BuildImageTask 释放资源的方法
+                        rmList.add(entry.getKey());
+                    }
+                }
+                for (Long key : rmList) {
+                    BUILD_IMAGE_TASK_MAP.remove(key);
+                }
+                log.info("[BuildImageHandler] 移除务数[{}] 当前正在构建任务数[{}]", rmList.size(), BUILD_IMAGE_TASK_MAP.size());
+                try {
+                    Thread.sleep(1000 * 3);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
+    }
 
     @Autowired
     private GlobalConfig globalConfig;
@@ -101,8 +124,7 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
         }
         // 启动任务
         BuildImageTask buildImageTask = new BuildImageTask(session, codeRepository, imageConfig);
-        Thread newThread = new Thread(buildImageTask);
-        newThread.start();
+        buildImageTask.start();
         BUILD_IMAGE_TASK_MAP.put(buildImageReqDto.getImageConfigId(), buildImageTask);
     }
 
