@@ -133,7 +133,6 @@ public class BuildImageService {
         }
 
         // 开始异步构建镜像
-        buildImageResDto.setBuildImageTaskCount(buildImageTask.size());
         buildImageResDto.setStartTime(System.currentTimeMillis());
         buildImageResDto.setImageConfig(imageConfig);
         buildImageResDto.setCodeRepository(codeRepository);
@@ -182,7 +181,6 @@ public class BuildImageService {
      * @param message 失败的消息
      */
     private void sendCompleteMessage(String message) {
-        buildImageResDto.setIsComplete(true);
         buildImageResDto.setCompleteMsg(message);
         try {
             session.getBasicRemote().sendText(JacksonMapper.nonEmptyMapper().toJson(buildImageResDto));

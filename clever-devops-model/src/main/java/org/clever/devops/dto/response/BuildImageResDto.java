@@ -22,11 +22,6 @@ public class BuildImageResDto extends BaseResponse {
     private Long startTime;
 
     /**
-     * 当前构建镜像的任务数量
-     */
-    private Integer buildImageTaskCount;
-
-    /**
      * 当前操作的“代码仓库”
      */
     private CodeRepository codeRepository;
@@ -42,17 +37,12 @@ public class BuildImageResDto extends BaseResponse {
     private Integer buildState;
 
     /**
-     * 是否已经完成
-     */
-    private Boolean isComplete = false;
-
-    /**
-     * 完成消息
-     */
-    private String completeMsg;
-
-    /**
      * 日志信息
      */
     private String logText;
+
+    /**
+     * 完成时的消息
+     */
+    private String completeMsg;
 }
