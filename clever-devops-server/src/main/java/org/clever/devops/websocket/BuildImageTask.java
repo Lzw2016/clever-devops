@@ -16,6 +16,7 @@ import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
 import org.clever.devops.utils.GitUtils;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
+import org.eclipse.jgit.lib.BatchingProgressMonitor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -102,7 +103,13 @@ public class BuildImageTask extends Thread {
      * 增加一个WebSocketSession到当前任务
      */
     public void addWebSocketSession(WebSocketSession session) {
-        sendLogText(session, allLogText.toString());
+        BuildImageResDto tmp = new BuildImageResDto();
+        tmp.setCodeRepository(buildImageResDto.getCodeRepository());
+        tmp.setImageConfig(buildImageResDto.getImageConfig());
+        tmp.setStartTime(buildImageResDto.getStartTime());
+        tmp.setLogText(allLogText.toString());
+        tmp.setCompleteMsg(buildImageResDto.getCompleteMsg());
+        sendMessage(session, tmp);
         outSessionSet.add(session);
     }
 
@@ -135,6 +142,7 @@ public class BuildImageTask extends Thread {
      * 1.下载代码 <br/>
      * 2.编译代码 <br/>
      * 3.构建镜像 <br/>
+     * 4.清除临时文件 <br/>
      */
 //    @Transactional(propagation = Propagation.NEVER)
     @Override
@@ -143,6 +151,19 @@ public class BuildImageTask extends Thread {
         // 设置
         buildImageResDto.setStartTime(System.currentTimeMillis());
         sendLogText("------------------------------------------------------------- 1.下载代码 -------------------------------------------------------------");
+        // 删除之前下载的代码
+        if (StringUtils.isNotBlank(imageConfig.getCodeDownloadPath())) {
+            File deleteFile = new File(imageConfig.getCodeDownloadPath());
+            if (deleteFile.exists()) {
+                try {
+                    FileUtils.forceDelete(deleteFile);
+                    sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除成功");
+                } catch (Throwable e) {
+                    log.error("删除下载的代码文件失败", e);
+                    sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除失败");
+                }
+            }
+        }
         imageConfig.setBuildState(ImageConfig.buildState_1);
         imageConfig.setCodeDownloadPath(FilenameUtils.concat(globalConfig.getCodeDownloadPath(), UUID.randomUUID().toString()));
         imageConfig.setUpdateDate(new Date());
@@ -151,38 +172,66 @@ public class BuildImageTask extends Thread {
             sendCompleteMessage("暂时只支持Git仓库");
             return;
         }
-        // 删除之前下载的代码
-        if (StringUtils.isNotBlank(imageConfig.getCodeDownloadPath())) {
-            File deleteFile = new File(FilenameUtils.concat(globalConfig.getCodeDownloadPath(), imageConfig.getCodeDownloadPath()));
-            if (deleteFile.exists()) {
-                try {
-                    FileUtils.forceDelete(deleteFile);
-                    sendLogText("上一次构建镜像下载的代码文件删除成功");
-                } catch (Throwable e) {
-                    log.error("删除下载的代码文件失败", e);
-                    sendLogText("上一次构建镜像下载的代码文件删除失败");
+        // 更新CommitID -> 下载代码
+        BatchingProgressMonitor progressMonitor = new BatchingProgressMonitor() {
+
+            private final long interval = 1000;
+
+            private long lastSendLog = System.currentTimeMillis();
+
+            @Override
+            protected void onUpdate(String taskName, int workCurr) {
+                sendLog(taskName, workCurr);
+            }
+
+            @Override
+            protected void onEndTask(String taskName, int workCurr) {
+                sendLog(taskName, workCurr);
+            }
+
+            private void sendLog(String taskName, int workCurr) {
+                if (System.currentTimeMillis() - lastSendLog >= interval) {
+                    lastSendLog = System.currentTimeMillis();
+                    sendLogText(String.format("[1.下载代码] %1$s: %2$s", taskName, workCurr));
                 }
             }
-        }
-        // 更新CommitID -> 下载代码
+
+            @Override
+            protected void onUpdate(String taskName, int workCurr, int workTotal, int percentDone) {
+                sendLog(taskName, workCurr, workTotal, percentDone);
+            }
+
+            @Override
+            protected void onEndTask(String taskName, int workCurr, int workTotal, int percentDone) {
+                sendLog(taskName, workCurr, workTotal, percentDone);
+            }
+
+            private void sendLog(String taskName, int workCurr, int workTotal, int percentDone) {
+                if (System.currentTimeMillis() - lastSendLog >= interval) {
+                    lastSendLog = System.currentTimeMillis();
+                    sendLogText(String.format("[1.下载代码] %1$s: %2$s%% (%3$s/%4$s)", taskName, percentDone, workCurr, workTotal));
+                }
+            }
+        };
+
         if (Objects.equals(CodeRepository.Repository_Type_Git, codeRepository.getRepositoryType())) {
             // Git 代码仓库
             if (Objects.equals(CodeRepository.Authorization_Type_0, codeRepository.getAuthorizationType())) {
                 ImageConfig.GitBranch gitBranch = GitUtils.getBranch(codeRepository.getRepositoryUrl(), imageConfig.getBranch());
-                sendLogText(String.format("更新Branch的最新的commitId [ %1$s -> %2$s ]", gitBranch.getBranch(), gitBranch.getCommitId()));
+                sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", gitBranch.getBranch(), gitBranch.getCommitId()));
                 imageConfig.setCommitId(gitBranch.getCommitId());
                 // 不需要授权
-                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId());
+                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), progressMonitor);
             } else if (Objects.equals(CodeRepository.Authorization_Type_1, codeRepository.getAuthorizationType())) {
                 CodeRepository.UserNameAndPassword userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(codeRepository.getAuthorizationInfo(), CodeRepository.UserNameAndPassword.class);
                 if (userNameAndPassword == null) {
                     throw new BusinessException("读取授权用户名密码失败");
                 }
                 ImageConfig.GitBranch gitBranch = GitUtils.getBranch(codeRepository.getRepositoryUrl(), imageConfig.getBranch(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword());
-                sendLogText(String.format("更新Branch的最新的commitId [ %1$s -> %2$s ]", gitBranch.getBranch(), gitBranch.getCommitId()));
+                sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", gitBranch.getBranch(), gitBranch.getCommitId()));
                 imageConfig.setCommitId(gitBranch.getCommitId());
                 // 用户名密码
-                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword());
+                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword(), progressMonitor);
             } else {
                 sendCompleteMessage("不支持的代码仓库授权类型");
                 return;
@@ -191,18 +240,30 @@ public class BuildImageTask extends Thread {
             sendCompleteMessage("暂时只支持Git仓库");
             return;
         }
-        sendLogText("代码下载完成");
+        sendLogText("[1.下载代码] 完成");
 
         sendLogText("------------------------------------------------------------- 2.编译代码 -------------------------------------------------------------");
         imageConfig.setBuildState(ImageConfig.buildState_2);
         imageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
 
-
         sendLogText("------------------------------------------------------------- 3.构建镜像 -------------------------------------------------------------");
         imageConfig.setBuildState(ImageConfig.buildState_3);
         imageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
+
+        sendLogText("------------------------------------------------------------- 4.清除临时文件 -------------------------------------------------------------");
+        // 删除下载的代码
+        File deleteFile = new File(imageConfig.getCodeDownloadPath());
+        if (deleteFile.exists()) {
+            try {
+                FileUtils.forceDelete(deleteFile);
+                sendLogText("[4.清除临时文件] 删除下载的代码成功");
+            } catch (Throwable e) {
+                log.error("删除下载的代码文件失败", e);
+                sendLogText("[4.清除临时文件] 删除下载的代码失败");
+            }
+        }
 
         // 发送任务结束消息
         sendCompleteMessage("------------------------------------------------------------- 镜像构建成功 -------------------------------------------------------------");
@@ -231,19 +292,6 @@ public class BuildImageTask extends Thread {
     }
 
     /**
-     * 发送日志消息到指定的客户端
-     *
-     * @param session WebSocket连接
-     * @param logText 日志消息
-     */
-    private void sendLogText(WebSocketSession session, String logText) {
-        logText = StringUtils.trim(logText);
-        allLogText.append(logText).append("\r\n");
-        buildImageResDto.setLogText(logText);
-        sendMessage(session, buildImageResDto);
-    }
-
-    /**
      * 发送任务结束消息到所有的客户端
      * 1.发送任务结束消息 <br/>
      * 2.服务端主动关闭连接 <br/>
@@ -253,6 +301,7 @@ public class BuildImageTask extends Thread {
     private void sendCompleteMessage(String completeMessage) {
         completeMessage = StringUtils.trim(completeMessage);
         allLogText.append(completeMessage).append("\r\n");
+        buildImageResDto.setLogText(completeMessage);
         buildImageResDto.setCompleteMsg(completeMessage);
         // 发送消息
         sendMessage(buildImageResDto);

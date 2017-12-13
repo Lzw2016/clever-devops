@@ -6,6 +6,7 @@ import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.devops.entity.ImageConfig;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
@@ -136,25 +137,30 @@ public class GitUtils {
     /**
      * 下载代码到本地服务器
      *
-     * @param directory     下载地址文件夹
-     * @param repositoryUrl 代码仓库地址
-     * @param commitId      commitID
+     * @param directory       下载地址文件夹
+     * @param repositoryUrl   代码仓库地址
+     * @param commitId        commitID
+     * @param progressMonitor 下载进度监控
      */
-    public static void downloadCode(String directory, String repositoryUrl, String commitId) {
-        downloadCode(directory, repositoryUrl, commitId, null, null);
+    public static void downloadCode(String directory, String repositoryUrl, String commitId, ProgressMonitor progressMonitor) {
+        downloadCode(directory, repositoryUrl, commitId, null, null, progressMonitor);
     }
 
     /**
      * 下载代码到本地服务器
      *
-     * @param directory     下载地址文件夹
-     * @param repositoryUrl 代码仓库地址
-     * @param commitId      commitID
-     * @param username      用户名
-     * @param password      密码
+     * @param directory       下载地址文件夹
+     * @param repositoryUrl   代码仓库地址
+     * @param commitId        commitID
+     * @param username        用户名
+     * @param password        密码
+     * @param progressMonitor 下载进度监控
      */
-    public static void downloadCode(String directory, String repositoryUrl, String commitId, String username, String password) {
+    public static void downloadCode(String directory, String repositoryUrl, String commitId, String username, String password, ProgressMonitor progressMonitor) {
         CloneCommand cloneCommand = Git.cloneRepository().setURI(repositoryUrl).setDirectory(new File(directory));
+        if (progressMonitor != null) {
+            cloneCommand.setProgressMonitor(progressMonitor);
+        }
         if (username != null) {
             cloneCommand.setCredentialsProvider(new UsernamePasswordCredentialsProvider(username, password));
         }
