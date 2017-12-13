@@ -1,4 +1,4 @@
-FROM java:8u111-jre-alpine
+FROM java:8u111-jre
 
 # 依赖 Maven 环境
 
