@@ -17,11 +17,6 @@ import org.clever.devops.entity.ImageConfig;
 public class BuildImageResDto extends BaseResponse {
 
     /**
-     * 开始构建时的时间戳
-     */
-    private Long startTime;
-
-    /**
      * 当前操作的“代码仓库”
      */
     private CodeRepository codeRepository;
@@ -32,9 +27,9 @@ public class BuildImageResDto extends BaseResponse {
     private ImageConfig imageConfig;
 
     /**
-     * 当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)
+     * 开始构建时的时间戳
      */
-    private Integer buildState;
+    private Long startTime;
 
     /**
      * 日志信息

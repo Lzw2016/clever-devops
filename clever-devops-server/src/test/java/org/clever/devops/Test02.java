@@ -24,7 +24,7 @@ public class Test02 {
     public void test01(String remote, String directory) throws GitAPIException {
         Git git = Git.cloneRepository()
                 .setURI(remote) // 设置远程仓库地址
-                .setCredentialsProvider(new UsernamePasswordCredentialsProvider("", "")) // 登入验证
+//                .setCredentialsProvider(new UsernamePasswordCredentialsProvider("", "")) // 登入验证
                 .setDirectory(new File(directory))
                 .setBranch("tzj.cc") // 设置分支版本
                 .call();

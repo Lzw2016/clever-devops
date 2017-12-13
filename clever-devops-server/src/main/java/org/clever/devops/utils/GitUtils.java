@@ -4,10 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.clever.common.model.exception.BusinessException;
 import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.devops.entity.ImageConfig;
+import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -129,6 +131,39 @@ public class GitUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * 下载代码到本地服务器
+     *
+     * @param directory     下载地址文件夹
+     * @param repositoryUrl 代码仓库地址
+     * @param commitId      commitID
+     */
+    public static void downloadCode(String directory, String repositoryUrl, String commitId) {
+        downloadCode(directory, repositoryUrl, commitId, null, null);
+    }
+
+    /**
+     * 下载代码到本地服务器
+     *
+     * @param directory     下载地址文件夹
+     * @param repositoryUrl 代码仓库地址
+     * @param commitId      commitID
+     * @param username      用户名
+     * @param password      密码
+     */
+    public static void downloadCode(String directory, String repositoryUrl, String commitId, String username, String password) {
+        CloneCommand cloneCommand = Git.cloneRepository().setURI(repositoryUrl).setDirectory(new File(directory));
+        if (username != null) {
+            cloneCommand.setCredentialsProvider(new UsernamePasswordCredentialsProvider(username, password));
+        }
+        try (Git git = cloneCommand.call()) {
+            git.checkout().setName(commitId).call();
+        } catch (Throwable e) {
+            log.error("Git下载代码失败", e);
+            throw new BusinessException("Git下载代码失败");
+        }
     }
 }
 

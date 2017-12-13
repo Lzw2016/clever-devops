@@ -10,6 +10,7 @@ import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
+import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -17,9 +18,10 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * 管理构建镜像的请求连接，该类的实例只有一个(单例)
@@ -30,11 +32,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @Component
 @Slf4j
 public class BuildImageHandler extends AbstractWebSocketHandler {
-
-    /**
-     * 所有需要关闭的Session
-     */
-    private static final CopyOnWriteArraySet<WebSocketSession> CLOSE_SESSION_SET = new CopyOnWriteArraySet<>();
 
     /**
      * 所有构建镜像的任务 镜像配置ID -> 构建任务
@@ -58,8 +55,8 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
                 log.info("[BuildImageHandler] 移除务数[{}] 当前正在构建任务数[{}]", rmList.size(), BUILD_IMAGE_TASK_MAP.size());
                 try {
                     Thread.sleep(1000 * 3);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                } catch (Throwable e) {
+                    log.error("休眠失败", e);
                 }
             }
         });
@@ -93,7 +90,7 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
             sendErrorMessage(session, "请求消息格式错误");
             return;
         }
-        // 校验参数 BuildImageReqDto 的完整性
+        // TODO 校验参数 BuildImageReqDto 的完整性
 
         // 业务校验 - 校验对应的配置信息都存在
         ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(buildImageReqDto.getImageConfigId());
@@ -113,6 +110,7 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
             BuildImageTask buildImageTask = BUILD_IMAGE_TASK_MAP.get(buildImageReqDto.getImageConfigId());
             if (buildImageTask == null) {
                 sendErrorMessage(session, String.format("当前镜像正在构建，ImageConfigId=%1$s", imageConfig.getRepositoryId()));
+                WebSocketCloseSessionUtils.closeSession(session);
             } else {
                 buildImageTask.addWebSocketSession(session);
             }
@@ -123,7 +121,7 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
             sendErrorMessage(session, String.format("当前构建镜像任务数已达到最大值:%1$s，请稍候再试", globalConfig.getMaxBuildImageTask()));
         }
         // 启动任务
-        BuildImageTask buildImageTask = new BuildImageTask(session, codeRepository, imageConfig);
+        BuildImageTask buildImageTask = BuildImageTask.newBuildImageTask(session, codeRepository, imageConfig);
         buildImageTask.start();
         BUILD_IMAGE_TASK_MAP.put(buildImageReqDto.getImageConfigId(), buildImageTask);
     }
@@ -142,7 +140,7 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
         log.info("关闭连接后");
-        closeSession(null);
+        WebSocketCloseSessionUtils.closeSession(session);
     }
 
     /**
@@ -169,28 +167,6 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
             throw ExceptionUtils.unchecked(e);
         }
         // 关闭连接
-        closeSession(session);
-    }
-
-    /**
-     * 关闭需要关闭的连接
-     */
-    private static void closeSession(WebSocketSession session) {
-        if (session != null) {
-            CLOSE_SESSION_SET.add(session);
-        }
-        Set<WebSocketSession> rmList = new HashSet<>();
-        for (WebSocketSession closeSession : CLOSE_SESSION_SET) {
-            if (closeSession.isOpen()) {
-                try {
-                    closeSession.close();
-                } catch (Throwable e) {
-                    log.error("关闭WebSocketSession连接异常", e);
-                    continue;
-                }
-            }
-            rmList.add(closeSession);
-        }
-        CLOSE_SESSION_SET.removeAll(rmList);
+        WebSocketCloseSessionUtils.closeSession(session);
     }
 }
