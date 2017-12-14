@@ -65,4 +65,6 @@ public class ImageConfigController extends BaseController {
                 getGitBranchDto.getAuthorizationInfo(),
                 getGitBranchDto.getBranch());
     }
+
+    // TODO 获取所有的 获取“branch或Tag”信息
 }

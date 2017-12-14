@@ -167,6 +167,7 @@ public class BuildImageTask extends Thread {
             }
         }
         imageConfig.setBuildState(ImageConfig.buildState_1);
+        imageConfig.setBuildStartTime(new Date());
         imageConfig.setCodeDownloadPath(FilenameUtils.concat(globalConfig.getCodeDownloadPath(), UUID.randomUUID().toString()));
         imageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
@@ -249,6 +250,7 @@ public class BuildImageTask extends Thread {
         imageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
         if (Objects.equals(ImageConfig.buildType_Maven, imageConfig.getBuildType())) {
+            sendLogText("[2.编译代码] 使用Maven编译项目");
             CodeCompileUtils.mvn(new IConsoleOutput() {
                                      @Override
                                      public void output(String line) {
@@ -266,9 +268,6 @@ public class BuildImageTask extends Thread {
             sendCompleteMessage("暂时只支持Maven编译");
             return;
         }
-
-        // TODO 测试
-        sendCompleteMessage("测试中断");
 
         sendLogText("------------------------------------------------------------- 3.构建镜像 -------------------------------------------------------------");
         imageConfig.setBuildState(ImageConfig.buildState_3);
@@ -291,6 +290,7 @@ public class BuildImageTask extends Thread {
         // 发送任务结束消息
         sendCompleteMessage("------------------------------------------------------------- 镜像构建成功 -------------------------------------------------------------");
         imageConfig.setBuildState(ImageConfig.buildState_S);
+        imageConfig.setBuildEndTime(new Date());
         imageConfig.setBuildLogs(allLogText.toString());
         imageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
