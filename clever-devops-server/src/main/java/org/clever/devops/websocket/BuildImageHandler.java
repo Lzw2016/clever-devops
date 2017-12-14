@@ -4,8 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.config.GlobalConfig;
-import org.clever.devops.dto.request.BuildImageReqDto;
-import org.clever.devops.dto.response.BuildImageResDto;
+import org.clever.devops.dto.request.BuildImageReq;
+import org.clever.devops.dto.response.BuildImageResRes;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
@@ -84,18 +84,18 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         log.info("[BuildImageHandler] 消息处理 -> {}", message.getPayload());
-        BuildImageReqDto buildImageReqDto = JacksonMapper.nonEmptyMapper().fromJson(message.getPayload(), BuildImageReqDto.class);
+        BuildImageReq buildImageReq = JacksonMapper.nonEmptyMapper().fromJson(message.getPayload(), BuildImageReq.class);
         // 校验请求消息
-        if (buildImageReqDto == null) {
+        if (buildImageReq == null) {
             sendErrorMessage(session, "请求消息格式错误");
             return;
         }
-        // TODO 校验参数 BuildImageReqDto 的完整性
+        // TODO 校验参数 BuildImageReq 的完整性
 
         // 业务校验 - 校验对应的配置信息都存在
-        ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(buildImageReqDto.getImageConfigId());
+        ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(buildImageReq.getImageConfigId());
         if (imageConfig == null) {
-            sendErrorMessage(session, String.format("Docker镜像配置不存在，ImageConfigId=%1$s", buildImageReqDto.getImageConfigId()));
+            sendErrorMessage(session, String.format("Docker镜像配置不存在，ImageConfigId=%1$s", buildImageReq.getImageConfigId()));
             return;
         }
         CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfig.getRepositoryId());
@@ -107,7 +107,7 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
         if (Objects.equals(ImageConfig.buildState_1, imageConfig.getBuildState())
                 || Objects.equals(ImageConfig.buildState_2, imageConfig.getBuildState())
                 || Objects.equals(ImageConfig.buildState_3, imageConfig.getBuildState())) {
-            BuildImageTask buildImageTask = BUILD_IMAGE_TASK_MAP.get(buildImageReqDto.getImageConfigId());
+            BuildImageTask buildImageTask = BUILD_IMAGE_TASK_MAP.get(buildImageReq.getImageConfigId());
             if (buildImageTask == null) {
                 sendErrorMessage(session, String.format("当前镜像正在构建，ImageConfigId=%1$s", imageConfig.getRepositoryId()));
                 WebSocketCloseSessionUtils.closeSession(session);
@@ -123,7 +123,7 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
         // 启动任务
         BuildImageTask buildImageTask = BuildImageTask.newBuildImageTask(session, codeRepository, imageConfig);
         buildImageTask.start();
-        BUILD_IMAGE_TASK_MAP.put(buildImageReqDto.getImageConfigId(), buildImageTask);
+        BUILD_IMAGE_TASK_MAP.put(buildImageReq.getImageConfigId(), buildImageTask);
     }
 
     /**
@@ -158,9 +158,9 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
      * @param errorMessage 错误消息
      */
     private void sendErrorMessage(WebSocketSession session, String errorMessage) {
-        BuildImageResDto buildImageResDto = new BuildImageResDto();
-        buildImageResDto.setCompleteMsg(errorMessage);
-        TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(buildImageResDto));
+        BuildImageResRes buildImageResRes = new BuildImageResRes();
+        buildImageResRes.setCompleteMsg(errorMessage);
+        TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(buildImageResRes));
         try {
             session.sendMessage(textMessage);
         } catch (Throwable e) {

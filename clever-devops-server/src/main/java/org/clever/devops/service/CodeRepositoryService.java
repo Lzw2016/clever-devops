@@ -6,9 +6,9 @@ import org.clever.common.model.exception.BusinessException;
 import org.clever.common.server.service.BaseService;
 import org.clever.common.utils.mapper.BeanMapper;
 import org.clever.common.utils.mapper.JacksonMapper;
-import org.clever.devops.dto.request.CodeRepositoryAddDto;
-import org.clever.devops.dto.request.CodeRepositoryQueryDto;
-import org.clever.devops.dto.request.CodeRepositoryUpdateDto;
+import org.clever.devops.dto.request.CodeRepositoryAddReq;
+import org.clever.devops.dto.request.CodeRepositoryQueryReq;
+import org.clever.devops.dto.request.CodeRepositoryUpdateReq;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.utils.GitUtils;
@@ -33,20 +33,20 @@ public class CodeRepositoryService extends BaseService {
      * 新增代码仓库
      */
     @Transactional
-    public CodeRepository addCodeRepository(CodeRepositoryAddDto codeRepositoryAddDto) {
+    public CodeRepository addCodeRepository(CodeRepositoryAddReq codeRepositoryAddReq) {
         // 校验项目名称是否已经存在
-        CodeRepository codeRepository = codeRepositoryMapper.getByProjectName(codeRepositoryAddDto.getProjectName());
+        CodeRepository codeRepository = codeRepositoryMapper.getByProjectName(codeRepositoryAddReq.getProjectName());
         if (codeRepository != null) {
-            throw new BusinessException(String.format("项目名称已经存在，ProjectName=%1$s", codeRepositoryAddDto.getProjectName()));
+            throw new BusinessException(String.format("项目名称已经存在，ProjectName=%1$s", codeRepositoryAddReq.getProjectName()));
         }
         // 校验代码仓库类型
-        if (!Objects.equals(codeRepositoryAddDto.getRepositoryType(), CodeRepository.Repository_Type_Git)) {
+        if (!Objects.equals(codeRepositoryAddReq.getRepositoryType(), CodeRepository.Repository_Type_Git)) {
             throw new BusinessException("当前只支持GIT仓库");
         }
         // 测试连接代码仓库地址
-        testConnect(codeRepositoryAddDto.getRepositoryUrl(), codeRepositoryAddDto.getAuthorizationType(), codeRepositoryAddDto.getAuthorizationInfo());
+        testConnect(codeRepositoryAddReq.getRepositoryUrl(), codeRepositoryAddReq.getAuthorizationType(), codeRepositoryAddReq.getAuthorizationInfo());
         // 保存数据
-        codeRepository = BeanMapper.mapper(codeRepositoryAddDto, CodeRepository.class);
+        codeRepository = BeanMapper.mapper(codeRepositoryAddReq, CodeRepository.class);
         codeRepository.setCreateBy("");
         codeRepository.setCreateDate(new Date());
         codeRepositoryMapper.insertSelective(codeRepository);
@@ -56,10 +56,10 @@ public class CodeRepositoryService extends BaseService {
     /**
      * 查询代码仓库
      */
-    public PageInfo<CodeRepository> findCodeRepository(CodeRepositoryQueryDto codeRepositoryQueryDto) {
+    public PageInfo<CodeRepository> findCodeRepository(CodeRepositoryQueryReq codeRepositoryQueryReq) {
         return PageHelper
-                .startPage(codeRepositoryQueryDto.getPageNo(), codeRepositoryQueryDto.getPageSize())
-                .doSelectPageInfo(() -> codeRepositoryMapper.findCodeRepository(codeRepositoryQueryDto));
+                .startPage(codeRepositoryQueryReq.getPageNo(), codeRepositoryQueryReq.getPageSize())
+                .doSelectPageInfo(() -> codeRepositoryMapper.findCodeRepository(codeRepositoryQueryReq));
     }
 
     /**
@@ -73,37 +73,37 @@ public class CodeRepositoryService extends BaseService {
      * 更新代码仓库
      *
      * @param id                      代码仓库ID
-     * @param codeRepositoryUpdateDto 代码仓库更新数据
+     * @param codeRepositoryUpdateReq 代码仓库更新数据
      */
     @Transactional
-    public CodeRepository updateCodeRepository(Long id, CodeRepositoryUpdateDto codeRepositoryUpdateDto) {
+    public CodeRepository updateCodeRepository(Long id, CodeRepositoryUpdateReq codeRepositoryUpdateReq) {
         CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(id);
         if (codeRepository == null) {
             throw new BusinessException(String.format("代码仓库不存在，ID=%1$s", id));
         }
         // 验证 项目名称 是否重复
-        if (codeRepositoryUpdateDto.getProjectName() != null) {
-            CodeRepository tmp = codeRepositoryMapper.getByProjectName(codeRepositoryUpdateDto.getProjectName());
+        if (codeRepositoryUpdateReq.getProjectName() != null) {
+            CodeRepository tmp = codeRepositoryMapper.getByProjectName(codeRepositoryUpdateReq.getProjectName());
             if (tmp != null && !Objects.equals(codeRepository.getId(), tmp.getId())) {
-                throw new BusinessException(String.format("项目名称已经存在，ProjectName=%1$s", codeRepositoryUpdateDto.getProjectName()));
+                throw new BusinessException(String.format("项目名称已经存在，ProjectName=%1$s", codeRepositoryUpdateReq.getProjectName()));
             }
         }
         // 校验代码仓库类型
-        if (codeRepositoryUpdateDto.getRepositoryType() != null
-                && !Objects.equals(codeRepositoryUpdateDto.getRepositoryType(), CodeRepository.Repository_Type_Git)) {
+        if (codeRepositoryUpdateReq.getRepositoryType() != null
+                && !Objects.equals(codeRepositoryUpdateReq.getRepositoryType(), CodeRepository.Repository_Type_Git)) {
             throw new BusinessException("当前只支持GIT仓库");
         }
         // 测试连接代码仓库地址
-        if (codeRepositoryUpdateDto.getRepositoryUrl() != null
-                || codeRepositoryUpdateDto.getAuthorizationType() != null
-                || codeRepositoryUpdateDto.getAuthorizationInfo() != null) {
-            String repositoryUrl = codeRepositoryUpdateDto.getRepositoryUrl() != null ? codeRepositoryUpdateDto.getRepositoryUrl() : codeRepository.getRepositoryUrl();
-            String authorizationType = codeRepositoryUpdateDto.getAuthorizationType() != null ? codeRepositoryUpdateDto.getAuthorizationType() : String.valueOf(codeRepository.getAuthorizationType());
-            String authorizationInfo = codeRepositoryUpdateDto.getAuthorizationInfo() != null ? codeRepositoryUpdateDto.getAuthorizationInfo() : codeRepository.getAuthorizationInfo();
+        if (codeRepositoryUpdateReq.getRepositoryUrl() != null
+                || codeRepositoryUpdateReq.getAuthorizationType() != null
+                || codeRepositoryUpdateReq.getAuthorizationInfo() != null) {
+            String repositoryUrl = codeRepositoryUpdateReq.getRepositoryUrl() != null ? codeRepositoryUpdateReq.getRepositoryUrl() : codeRepository.getRepositoryUrl();
+            String authorizationType = codeRepositoryUpdateReq.getAuthorizationType() != null ? codeRepositoryUpdateReq.getAuthorizationType() : String.valueOf(codeRepository.getAuthorizationType());
+            String authorizationInfo = codeRepositoryUpdateReq.getAuthorizationInfo() != null ? codeRepositoryUpdateReq.getAuthorizationInfo() : codeRepository.getAuthorizationInfo();
             testConnect(repositoryUrl, authorizationType, authorizationInfo);
         }
         // 更新数据
-        BeanMapper.copyTo(codeRepositoryUpdateDto, codeRepository);
+        BeanMapper.copyTo(codeRepositoryUpdateReq, codeRepository);
         codeRepository.setUpdateBy("");
         codeRepository.setUpdateDate(new Date());
         codeRepositoryMapper.updateByPrimaryKeySelective(codeRepository);

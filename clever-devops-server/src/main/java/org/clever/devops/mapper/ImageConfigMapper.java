@@ -2,7 +2,7 @@ package org.clever.devops.mapper;
 
 import org.apache.ibatis.annotations.Param;
 import org.clever.common.server.mapper.CustomMapper;
-import org.clever.devops.dto.request.ImageConfigQueryDto;
+import org.clever.devops.dto.request.ImageConfigQueryReq;
 import org.clever.devops.entity.ImageConfig;
 
 import java.util.List;
@@ -24,5 +24,5 @@ public interface ImageConfigMapper extends CustomMapper<ImageConfig> {
      */
     ImageConfig getByServerUrl(@Param("serverUrl") String serverUrl);
 
-    List<ImageConfig> findImageConfig(ImageConfigQueryDto imageConfigQueryDto);
+    List<ImageConfig> findImageConfig(ImageConfigQueryReq imageConfigQueryReq);
 }

@@ -4,10 +4,10 @@ import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
-import org.clever.devops.dto.request.GetGitBranchDto;
-import org.clever.devops.dto.request.ImageConfigAddDto;
-import org.clever.devops.dto.request.ImageConfigQueryDto;
-import org.clever.devops.dto.request.ImageConfigUpdateDto;
+import org.clever.devops.dto.request.GetGitBranchReq;
+import org.clever.devops.dto.request.ImageConfigAddReq;
+import org.clever.devops.dto.request.ImageConfigQueryReq;
+import org.clever.devops.dto.request.ImageConfigUpdateReq;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.service.ImageConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,14 +28,14 @@ public class ImageConfigController extends BaseController {
 
     @ApiOperation("新增Docker镜像配置")
     @PostMapping("/image_config" + JSON_SUFFIX)
-    public ImageConfig addImageConfig(@RequestBody @Validated ImageConfigAddDto imageConfigAddDto) {
-        return imageConfigService.addImageConfig(imageConfigAddDto);
+    public ImageConfig addImageConfig(@RequestBody @Validated ImageConfigAddReq imageConfigAddReq) {
+        return imageConfigService.addImageConfig(imageConfigAddReq);
     }
 
     @ApiOperation("查询Docker镜像配置")
     @GetMapping("/image_config" + JSON_SUFFIX)
-    public PageInfo<ImageConfig> findImageConfig(ImageConfigQueryDto imageConfigQueryDto) {
-        return imageConfigService.findImageConfig(imageConfigQueryDto);
+    public PageInfo<ImageConfig> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
+        return imageConfigService.findImageConfig(imageConfigQueryReq);
     }
 
     @ApiOperation("获取Docker镜像配置")
@@ -46,8 +46,8 @@ public class ImageConfigController extends BaseController {
 
     @ApiOperation("更新Docker镜像配置")
     @PutMapping("/image_config/{id}" + JSON_SUFFIX)
-    public ImageConfig updateImageConfig(@PathVariable("id") Long id, @RequestBody @Validated ImageConfigUpdateDto imageConfigUpdateDto) {
-        return imageConfigService.updateImageConfig(id, imageConfigUpdateDto);
+    public ImageConfig updateImageConfig(@PathVariable("id") Long id, @RequestBody @Validated ImageConfigUpdateReq imageConfigUpdateReq) {
+        return imageConfigService.updateImageConfig(id, imageConfigUpdateReq);
     }
 
     @ApiOperation("删除Docker镜像配置")
@@ -58,12 +58,12 @@ public class ImageConfigController extends BaseController {
 
     @ApiOperation("获取“branch或Tag”信息")
     @PostMapping("/git_branch" + JSON_SUFFIX)
-    public ImageConfig.GitBranch getGitBranch(@RequestBody @Validated GetGitBranchDto getGitBranchDto) {
+    public ImageConfig.GitBranch getGitBranch(@RequestBody @Validated GetGitBranchReq getGitBranchReq) {
         return imageConfigService.getBranch(
-                getGitBranchDto.getRepositoryUrl(),
-                getGitBranchDto.getAuthorizationType(),
-                getGitBranchDto.getAuthorizationInfo(),
-                getGitBranchDto.getBranch());
+                getGitBranchReq.getRepositoryUrl(),
+                getGitBranchReq.getAuthorizationType(),
+                getGitBranchReq.getAuthorizationInfo(),
+                getGitBranchReq.getBranch());
     }
 
     // TODO 获取所有的 获取“branch或Tag”信息

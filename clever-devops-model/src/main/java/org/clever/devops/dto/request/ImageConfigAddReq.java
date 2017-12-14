@@ -21,7 +21,7 @@ import javax.validation.constraints.Pattern;
 @ApiModel("新增Docker镜像配置")
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ImageConfigAddDto extends BaseRequest {
+public class ImageConfigAddReq extends BaseRequest {
 
     /**
      * 代码仓库ID

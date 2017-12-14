@@ -14,7 +14,7 @@ import org.clever.devops.entity.ImageConfig;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class BuildImageResDto extends BaseResponse {
+public class BuildImageResRes extends BaseResponse {
 
     /**
      * 当前操作的“代码仓库”

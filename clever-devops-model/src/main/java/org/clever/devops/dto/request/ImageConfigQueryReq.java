@@ -15,7 +15,7 @@ import org.clever.common.model.request.QueryByPage;
 @ApiModel("查询Docker镜像配置")
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ImageConfigQueryDto extends QueryByPage {
+public class ImageConfigQueryReq extends QueryByPage {
 
     /**
      * 代码仓库ID

@@ -28,11 +28,11 @@ public class Test03 {
     @Test
     public void test01() {
         log.info(System.getProperty("java.home"));
-
+        // compile
         ExecShellUtils.exec(consoleOutput, new String[]{
                 "G:",
                 "cd G:\\CodeDownloadPath\\loan-mall",
-                "mvn clean compile package -Dmaven.test.skip=true -U --global-settings=D:\\ToolsSoftware\\Maven\\settings.xml"
+                "mvn clean package -Dmaven.test.skip=true -U --global-settings=D:\\ToolsSoftware\\Maven\\settings.xml"
         });
     }
 

@@ -17,7 +17,7 @@ import javax.validation.constraints.NotNull;
 @ApiModel("构建镜像")
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class BuildImageReqDto extends BaseRequest {
+public class BuildImageReq extends BaseRequest {
 
     /**
      * 镜像配置ID

@@ -7,9 +7,9 @@ import org.clever.common.model.exception.BusinessException;
 import org.clever.common.server.service.BaseService;
 import org.clever.common.utils.mapper.BeanMapper;
 import org.clever.common.utils.mapper.JacksonMapper;
-import org.clever.devops.dto.request.ImageConfigAddDto;
-import org.clever.devops.dto.request.ImageConfigQueryDto;
-import org.clever.devops.dto.request.ImageConfigUpdateDto;
+import org.clever.devops.dto.request.ImageConfigAddReq;
+import org.clever.devops.dto.request.ImageConfigQueryReq;
+import org.clever.devops.dto.request.ImageConfigUpdateReq;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
@@ -40,33 +40,33 @@ public class ImageConfigService extends BaseService {
      * 新增Docker镜像配置
      */
     @Transactional
-    public ImageConfig addImageConfig(ImageConfigAddDto imageConfigAddDto) {
+    public ImageConfig addImageConfig(ImageConfigAddReq imageConfigAddReq) {
         // 获取代码仓库信息
-        CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfigAddDto.getRepositoryId());
+        CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfigAddReq.getRepositoryId());
         if (codeRepository == null) {
-            throw new BusinessException(String.format("代码仓库不存在，RepositoryId=%1$s", imageConfigAddDto.getRepositoryId()));
+            throw new BusinessException(String.format("代码仓库不存在，RepositoryId=%1$s", imageConfigAddReq.getRepositoryId()));
         }
         // 校验代码仓库“branch或Tag”是否存在
         ImageConfig.GitBranch gitBranch = getBranch(
                 codeRepository.getRepositoryUrl(),
                 codeRepository.getAuthorizationType().toString(),
                 codeRepository.getAuthorizationInfo(),
-                imageConfigAddDto.getBranch());
+                imageConfigAddReq.getBranch());
         if (gitBranch == null) {
-            throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigAddDto.getBranch()));
+            throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigAddReq.getBranch()));
         }
         // 校验镜像配置已经存在
-        ImageConfig tmp = imageConfigMapper.getByRepositoryId(imageConfigAddDto.getRepositoryId(), gitBranch.getCommitId());
+        ImageConfig tmp = imageConfigMapper.getByRepositoryId(imageConfigAddReq.getRepositoryId(), gitBranch.getCommitId());
         if (tmp != null) {
-            throw new BusinessException(String.format("Docker镜像配置已经存在，RepositoryId=%1$s, CommitId=%2$s", imageConfigAddDto.getRepositoryId(), gitBranch.getCommitId()));
+            throw new BusinessException(String.format("Docker镜像配置已经存在，RepositoryId=%1$s, CommitId=%2$s", imageConfigAddReq.getRepositoryId(), gitBranch.getCommitId()));
         }
         // 校验 serverUrl 唯一
-        tmp = imageConfigMapper.getByServerUrl(imageConfigAddDto.getServerUrl());
+        tmp = imageConfigMapper.getByServerUrl(imageConfigAddReq.getServerUrl());
         if (tmp != null) {
-            throw new BusinessException(String.format("服务访问域名重复，ServerUrl=%1$s", imageConfigAddDto.getServerUrl()));
+            throw new BusinessException(String.format("服务访问域名重复，ServerUrl=%1$s", imageConfigAddReq.getServerUrl()));
         }
         // 保存数据
-        ImageConfig imageConfig = BeanMapper.mapper(imageConfigAddDto, ImageConfig.class);
+        ImageConfig imageConfig = BeanMapper.mapper(imageConfigAddReq, ImageConfig.class);
         imageConfig.setCommitId(gitBranch.getCommitId());
         imageConfig.setCreateBy("");
         imageConfig.setCreateDate(new Date());
@@ -77,10 +77,10 @@ public class ImageConfigService extends BaseService {
     /**
      * 查询代码仓库
      */
-    public PageInfo<ImageConfig> findImageConfig(ImageConfigQueryDto imageConfigQueryDto) {
+    public PageInfo<ImageConfig> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
         return PageHelper
-                .startPage(imageConfigQueryDto.getPageNo(), imageConfigQueryDto.getPageSize())
-                .doSelectPageInfo(() -> imageConfigMapper.findImageConfig(imageConfigQueryDto));
+                .startPage(imageConfigQueryReq.getPageNo(), imageConfigQueryReq.getPageSize())
+                .doSelectPageInfo(() -> imageConfigMapper.findImageConfig(imageConfigQueryReq));
     }
 
     /**
@@ -94,14 +94,14 @@ public class ImageConfigService extends BaseService {
      * 更新Docker镜像配置
      */
     @Transactional
-    public ImageConfig updateImageConfig(Long id, ImageConfigUpdateDto imageConfigUpdateDto) {
+    public ImageConfig updateImageConfig(Long id, ImageConfigUpdateReq imageConfigUpdateReq) {
         // 查询需要更新的数据
         ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(id);
         if (imageConfig == null) {
             throw new BusinessException(String.format("Docker镜像配置不存在，ID=%1$s", id));
         }
         // 跟新了 Branch ，需要校验
-        if (imageConfigUpdateDto.getBranch() != null && !Objects.equals(imageConfig.getBranch(), imageConfigUpdateDto.getBranch())) {
+        if (imageConfigUpdateReq.getBranch() != null && !Objects.equals(imageConfig.getBranch(), imageConfigUpdateReq.getBranch())) {
             // 获取代码仓库信息
             CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfig.getRepositoryId());
             if (codeRepository == null) {
@@ -112,9 +112,9 @@ public class ImageConfigService extends BaseService {
                     codeRepository.getRepositoryUrl(),
                     codeRepository.getAuthorizationType().toString(),
                     codeRepository.getAuthorizationInfo(),
-                    imageConfigUpdateDto.getBranch());
+                    imageConfigUpdateReq.getBranch());
             if (gitBranch == null) {
-                throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigUpdateDto.getBranch()));
+                throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigUpdateReq.getBranch()));
             }
             // 校验镜像配置已经存在
             ImageConfig tmp = imageConfigMapper.getByRepositoryId(imageConfig.getRepositoryId(), imageConfig.getCommitId());
@@ -125,15 +125,15 @@ public class ImageConfigService extends BaseService {
             imageConfig.setCommitId(gitBranch.getCommitId());
         }
         // 更新了 serverUrl，需要校验
-        if (imageConfigUpdateDto.getServerUrl() != null) {
+        if (imageConfigUpdateReq.getServerUrl() != null) {
             // 校验 serverUrl 唯一
-            ImageConfig tmp = imageConfigMapper.getByServerUrl(imageConfigUpdateDto.getServerUrl());
+            ImageConfig tmp = imageConfigMapper.getByServerUrl(imageConfigUpdateReq.getServerUrl());
             if (tmp != null && !Objects.equals(imageConfig.getId(), tmp.getId())) {
-                throw new BusinessException(String.format("服务访问域名重复，ServerUrl=%1$s", imageConfigUpdateDto.getServerUrl()));
+                throw new BusinessException(String.format("服务访问域名重复，ServerUrl=%1$s", imageConfigUpdateReq.getServerUrl()));
             }
         }
         // 更新数据
-        BeanMapper.copyTo(imageConfigUpdateDto, imageConfig);
+        BeanMapper.copyTo(imageConfigUpdateReq, imageConfig);
         imageConfig.setUpdateBy("");
         imageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);

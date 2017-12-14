@@ -15,7 +15,7 @@ import org.clever.common.model.request.QueryByPage;
 @ApiModel("查询代码仓库")
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class CodeRepositoryQueryDto extends QueryByPage {
+public class CodeRepositoryQueryReq extends QueryByPage {
 
     /**
      * 项目名称
