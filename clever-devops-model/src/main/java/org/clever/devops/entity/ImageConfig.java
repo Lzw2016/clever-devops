@@ -47,6 +47,16 @@ public class ImageConfig extends DataEntity {
     public static final Character buildState_F = 'F';
 
     /**
+     * 代码编译方式(Maven)
+     */
+    public static final String buildType_Maven = "Maven";
+
+    /**
+     * 代码编译方式(npm)
+     */
+    public static final String buildType_npm = "npm";
+
+    /**
      * 代码仓库ID
      */
     private Long repositoryId;

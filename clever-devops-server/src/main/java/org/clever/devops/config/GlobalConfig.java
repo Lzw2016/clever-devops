@@ -22,4 +22,9 @@ public class GlobalConfig {
      * 下载代码的路径
      */
     private String codeDownloadPath;
+
+    /**
+     * Maven的Settings文件路径
+     */
+    private String mavenSettingsPath;
 }

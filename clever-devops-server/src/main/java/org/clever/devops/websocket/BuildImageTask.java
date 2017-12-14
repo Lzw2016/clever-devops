@@ -14,7 +14,9 @@ import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
+import org.clever.devops.utils.CodeCompileUtils;
 import org.clever.devops.utils.GitUtils;
+import org.clever.devops.utils.IConsoleOutput;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.eclipse.jgit.lib.BatchingProgressMonitor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -246,6 +248,27 @@ public class BuildImageTask extends Thread {
         imageConfig.setBuildState(ImageConfig.buildState_2);
         imageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
+        if (Objects.equals(ImageConfig.buildType_Maven, imageConfig.getBuildType())) {
+            CodeCompileUtils.mvn(new IConsoleOutput() {
+                                     @Override
+                                     public void output(String line) {
+                                         sendLogText(line);
+                                     }
+
+                                     @Override
+                                     public void completed() {
+                                         sendLogText("[2.编译代码] 编译完成");
+                                     }
+                                 },
+                    imageConfig.getCodeDownloadPath(),
+                    new String[]{imageConfig.getBuildCmd(), String.format("--global-settings=%1$s", globalConfig.getMavenSettingsPath())});
+        } else if (Objects.equals(ImageConfig.buildType_npm, imageConfig.getBuildType())) {
+            sendCompleteMessage("暂时只支持Maven编译");
+            return;
+        }
+
+        // TODO 测试
+        sendCompleteMessage("测试中断");
 
         sendLogText("------------------------------------------------------------- 3.构建镜像 -------------------------------------------------------------");
         imageConfig.setBuildState(ImageConfig.buildState_3);
