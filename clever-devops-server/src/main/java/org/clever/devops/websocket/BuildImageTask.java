@@ -220,7 +220,6 @@ public class BuildImageTask extends Thread {
 //                                         if (str.contains("\033[k")) {
 //                                             log.info("############123456 \\033[k {}", str.replace("\033[k", "#"));
 //                                         }
-                                         str = str.replace("\r\n", "\n");
                                          sendConsoleLogText(str);
                                      }
 
@@ -277,6 +276,8 @@ public class BuildImageTask extends Thread {
         if (str == null) {
             return;
         }
+        // 统一换行处理
+        str = str.replace("\r\n", "\n");
         // 处理控制台控制字符
         for (int i = 0; i < str.length(); i++) {
             char ch = str.charAt(i);
@@ -284,10 +285,10 @@ public class BuildImageTask extends Thread {
                 case '\b':
                     allLogText.deleteCharAt(allLogText.length() - 1);
                     break;
-//                case '\r':
-//                    int start = allLogText.lastIndexOf("\n") + 1;
-//                    allLogText.delete(start, allLogText.length());
-//                    break;
+                case '\r':
+                    int start = allLogText.lastIndexOf("\n") + 1;
+                    allLogText.delete(start, allLogText.length());
+                    break;
                 default:
                     allLogText.append(ch);
             }
