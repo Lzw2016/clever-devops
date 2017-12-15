@@ -4,7 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.clever.devops.utils.CodeCompileUtils;
 import org.clever.devops.utils.ConsoleOutput;
 import org.clever.devops.utils.ExecShellUtils;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
+import org.jline.terminal.impl.jansi.win.JansiWinSysTerminal;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * 作者： lzw<br/>
@@ -61,5 +66,13 @@ public class Test03 {
         int start = sb.lastIndexOf("\n") + 1;
         sb.delete(start, sb.length());
         log.info(sb.toString());
+    }
+
+
+    @Test
+    public void test05() throws IOException {
+        Terminal terminal = TerminalBuilder.terminal();
+        terminal.writer().println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        log.info("xxx");
     }
 }

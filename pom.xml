@@ -97,6 +97,21 @@
                 <artifactId>org.eclipse.jgit</artifactId>
                 <version>4.9.0.201710071750-r</version>
             </dependency>
+            <dependency>
+                <groupId>org.jline</groupId>
+                <artifactId>jline-terminal</artifactId>
+                <version>3.5.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>3.5.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.fusesource.jansi</groupId>
+                <artifactId>jansi</artifactId>
+                <version>1.16</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
