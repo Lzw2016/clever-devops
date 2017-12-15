@@ -278,7 +278,7 @@ public class BuildImageTask extends Thread {
         }
         // 统一换行处理
         str = str.replace("\r\n", "\n");
-        // 处理控制台控制字符
+        // 处理控制台控制字符 TODO 尝试使用 AnsiString.chew() -> AnsiOutputStream
         for (int i = 0; i < str.length(); i++) {
             char ch = str.charAt(i);
             switch (ch) {
