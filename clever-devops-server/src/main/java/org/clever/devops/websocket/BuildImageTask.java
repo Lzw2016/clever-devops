@@ -9,7 +9,7 @@ import org.clever.common.model.exception.BusinessException;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.config.GlobalConfig;
-import org.clever.devops.dto.response.BuildImageResRes;
+import org.clever.devops.dto.response.BuildImageRes;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
@@ -60,7 +60,7 @@ public class BuildImageTask extends Thread {
     /**
      * 响应发送数据
      */
-    private BuildImageResRes buildImageResRes = new BuildImageResRes();
+    private BuildImageRes buildImageRes = new BuildImageRes();
 
     /**
      * 当前操作的“代码仓库”
@@ -97,20 +97,18 @@ public class BuildImageTask extends Thread {
         this.codeRepository = codeRepository;
         this.imageConfig = imageConfig;
         // 构建响应数据
-        buildImageResRes.setCodeRepository(codeRepository);
-        buildImageResRes.setImageConfig(imageConfig);
+        buildImageRes.setImageConfigId(imageConfig.getId());
     }
 
     /**
      * 增加一个WebSocketSession到当前任务
      */
     public void addWebSocketSession(WebSocketSession session) {
-        BuildImageResRes tmp = new BuildImageResRes();
-        tmp.setCodeRepository(buildImageResRes.getCodeRepository());
-        tmp.setImageConfig(buildImageResRes.getImageConfig());
-        tmp.setStartTime(buildImageResRes.getStartTime());
+        BuildImageRes tmp = new BuildImageRes();
+        buildImageRes.setImageConfigId(imageConfig.getId());
+        tmp.setStartTime(buildImageRes.getStartTime());
         tmp.setLogText(allLogText.toString());
-        tmp.setCompleteMsg(buildImageResRes.getCompleteMsg());
+        tmp.setComplete(false);
         sendMessage(session, tmp);
         outSessionSet.add(session);
     }
@@ -151,7 +149,7 @@ public class BuildImageTask extends Thread {
     public void run() {
         sendLogText("------------------------------------------------------------- 开始构建镜像 -------------------------------------------------------------");
         // 设置
-        buildImageResRes.setStartTime(System.currentTimeMillis());
+        buildImageRes.setStartTime(System.currentTimeMillis());
         sendLogText("------------------------------------------------------------- 1.下载代码 -------------------------------------------------------------");
         // 删除之前下载的代码
         if (StringUtils.isNotBlank(imageConfig.getCodeDownloadPath())) {
@@ -253,13 +251,13 @@ public class BuildImageTask extends Thread {
             sendLogText("[2.编译代码] 使用Maven编译项目");
             CodeCompileUtils.mvn(new IConsoleOutput() {
                                      @Override
-                                     public void output(String line) {
-                                         sendLogText(line);
+                                     public void output(String str) {
+                                         sendConsoleLogText(str);
                                      }
 
                                      @Override
                                      public void completed() {
-                                         sendLogText("[2.编译代码] 编译完成");
+                                         sendConsoleLogText("\n[2.编译代码] 编译完成\n");
                                      }
                                  },
                     imageConfig.getCodeDownloadPath(),
@@ -301,6 +299,27 @@ public class BuildImageTask extends Thread {
 
     }
 
+    /**
+     * 发送控制台输出到所有的客户端 (处理“\b”字符)
+     *
+     * @param str 控制台输出
+     */
+    private void sendConsoleLogText(String str) {
+        if (str == null) {
+            return;
+        }
+        for (int i = 0; i < str.length(); i++) {
+            char ch = str.charAt(i);
+            if ('\b' == ch) {
+                allLogText.deleteCharAt(allLogText.length() - 1);
+            } else {
+                allLogText.append(ch);
+            }
+        }
+        buildImageRes.setLogText(str);
+        buildImageRes.setComplete(false);
+        sendMessage(buildImageRes);
+    }
 
     /**
      * 发送日志消息到所有的客户端
@@ -308,10 +327,11 @@ public class BuildImageTask extends Thread {
      * @param logText 日志消息
      */
     private void sendLogText(String logText) {
-        logText = StringUtils.trim(logText);
-        allLogText.append(logText).append("\r\n");
-        buildImageResRes.setLogText(logText);
-        sendMessage(buildImageResRes);
+        logText = String.format("%1$s\n", StringUtils.trim(logText));
+        allLogText.append(logText);
+        buildImageRes.setLogText(logText);
+        buildImageRes.setComplete(false);
+        sendMessage(buildImageRes);
     }
 
     /**
@@ -322,12 +342,12 @@ public class BuildImageTask extends Thread {
      * @param completeMessage 任务结束消息
      */
     private void sendCompleteMessage(String completeMessage) {
-        completeMessage = StringUtils.trim(completeMessage);
-        allLogText.append(completeMessage).append("\r\n");
-        buildImageResRes.setLogText(completeMessage);
-        buildImageResRes.setCompleteMsg(completeMessage);
+        completeMessage = String.format("%1$s\n", StringUtils.trim(completeMessage));
+        allLogText.append(completeMessage);
+        buildImageRes.setLogText(completeMessage);
+        buildImageRes.setComplete(true);
         // 发送消息
-        sendMessage(buildImageResRes);
+        sendMessage(buildImageRes);
         // 关闭所有连接
         for (WebSocketSession session : outSessionSet) {
             WebSocketCloseSessionUtils.closeSession(session);
@@ -337,16 +357,16 @@ public class BuildImageTask extends Thread {
     /**
      * 发送消息到所有的客户端
      *
-     * @param buildImageResRes 消息对象
+     * @param buildImageRes 消息对象
      */
-    private void sendMessage(BuildImageResRes buildImageResRes) {
+    private void sendMessage(BuildImageRes buildImageRes) {
         Set<WebSocketSession> rmSet = new HashSet<>();
         for (WebSocketSession session : outSessionSet) {
             if (!session.isOpen()) {
                 rmSet.add(session);
                 continue;
             }
-            sendMessage(session, buildImageResRes);
+            sendMessage(session, buildImageRes);
         }
         // 移除关闭了的Session
         outSessionSet.removeAll(rmSet);
@@ -355,11 +375,11 @@ public class BuildImageTask extends Thread {
     /**
      * 发送消息到指定的客户端
      *
-     * @param session          WebSocket连接
-     * @param buildImageResRes 消息对象
+     * @param session       WebSocket连接
+     * @param buildImageRes 消息对象
      */
-    private void sendMessage(WebSocketSession session, BuildImageResRes buildImageResRes) {
-        TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(buildImageResRes));
+    private void sendMessage(WebSocketSession session, BuildImageRes buildImageRes) {
+        TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(buildImageRes));
         try {
             session.sendMessage(textMessage);
         } catch (Throwable e) {

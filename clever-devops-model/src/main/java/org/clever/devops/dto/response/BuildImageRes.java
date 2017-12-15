@@ -3,8 +3,6 @@ package org.clever.devops.dto.response;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.clever.common.model.response.BaseResponse;
-import org.clever.devops.entity.CodeRepository;
-import org.clever.devops.entity.ImageConfig;
 
 /**
  * 构建镜像的响应结果
@@ -14,17 +12,12 @@ import org.clever.devops.entity.ImageConfig;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class BuildImageResRes extends BaseResponse {
-
-    /**
-     * 当前操作的“代码仓库”
-     */
-    private CodeRepository codeRepository;
+public class BuildImageRes extends BaseResponse {
 
     /**
      * 当前操作的“Docker镜像配置”
      */
-    private ImageConfig imageConfig;
+    private Long imageConfigId;
 
     /**
      * 开始构建时的时间戳
@@ -37,7 +30,7 @@ public class BuildImageResRes extends BaseResponse {
     private String logText;
 
     /**
-     * 完成时的消息
+     * 处理完成要求客户端主动关闭连接
      */
-    private String completeMsg;
+    private boolean complete = false;
 }

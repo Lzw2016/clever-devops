@@ -16,6 +16,8 @@ import java.io.PrintWriter;
 @Slf4j
 public class ExecShellUtils {
 
+    // TODO 使用线程池 ThreadPoolTaskExecutor
+
     /**
      * 在操作系统控制台上执行命令
      *
@@ -51,12 +53,10 @@ public class ExecShellUtils {
             stdin.println(command);
         }
         stdin.close();
-        while (process.isAlive()) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                log.error("线程中断请求，已忽略", e);
-            }
+        try {
+            process.waitFor();
+        } catch (InterruptedException e) {
+            log.error("进程被中断", e);
         }
         process.destroy();
         if (consoleOutput != null) {

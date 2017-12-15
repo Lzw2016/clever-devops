@@ -10,9 +10,9 @@ public interface IConsoleOutput {
     /**
      * 控制台输出数据
      *
-     * @param line 输出行
+     * @param str 输出字符串
      */
-    void output(String line);
+    void output(String str);
 
     /**
      * 调用完成回调

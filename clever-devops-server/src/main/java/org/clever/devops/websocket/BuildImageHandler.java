@@ -5,7 +5,7 @@ import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.config.GlobalConfig;
 import org.clever.devops.dto.request.BuildImageReq;
-import org.clever.devops.dto.response.BuildImageResRes;
+import org.clever.devops.dto.response.BuildImageRes;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 @Slf4j
 public class BuildImageHandler extends AbstractWebSocketHandler {
+
+    // TODO 使用线程池 ThreadPoolTaskExecutor
 
     /**
      * 所有构建镜像的任务 镜像配置ID -> 构建任务
@@ -158,9 +160,9 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
      * @param errorMessage 错误消息
      */
     private void sendErrorMessage(WebSocketSession session, String errorMessage) {
-        BuildImageResRes buildImageResRes = new BuildImageResRes();
-        buildImageResRes.setCompleteMsg(errorMessage);
-        TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(buildImageResRes));
+        BuildImageRes buildImageRes = new BuildImageRes();
+        buildImageRes.setComplete(true);
+        TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(buildImageRes));
         try {
             session.sendMessage(textMessage);
         } catch (Throwable e) {

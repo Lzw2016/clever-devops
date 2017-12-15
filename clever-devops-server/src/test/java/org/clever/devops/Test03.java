@@ -43,4 +43,14 @@ public class Test03 {
                 "G:\\CodeDownloadPath\\loan-mall",
                 new String[]{"clean", "package", "-U", "--global-settings=D:\\ToolsSoftware\\Maven\\settings.xml", "-Dmaven.test.skip=true"});
     }
+
+    @Test
+    public void test03() {
+        log.info(System.getProperty("java.home"));
+        // compile
+        ExecShellUtils.exec(consoleOutput, new String[]{
+                "G:",
+                "java -cp clever-devops-model-1.0.0-SNAPSHOT.jar org.clever.devops.App",
+        });
+    }
 }
