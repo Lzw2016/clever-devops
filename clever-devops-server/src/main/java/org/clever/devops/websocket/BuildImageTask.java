@@ -15,10 +15,9 @@ import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
 import org.clever.devops.utils.CodeCompileUtils;
+import org.clever.devops.utils.ConsoleOutput;
 import org.clever.devops.utils.GitUtils;
-import org.clever.devops.utils.IConsoleOutput;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
-import org.eclipse.jgit.lib.BatchingProgressMonitor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -147,7 +146,6 @@ public class BuildImageTask extends Thread {
 //    @Transactional(propagation = Propagation.NEVER)
     @Override
     public void run() {
-        sendLogText("------------------------------------------------------------- 开始构建镜像 -------------------------------------------------------------");
         // 设置
         buildImageRes.setStartTime(System.currentTimeMillis());
         sendLogText("------------------------------------------------------------- 1.下载代码 -------------------------------------------------------------");
@@ -174,46 +172,7 @@ public class BuildImageTask extends Thread {
             return;
         }
         // 更新CommitID -> 下载代码
-        BatchingProgressMonitor progressMonitor = new BatchingProgressMonitor() {
-
-            private final long interval = 1000;
-
-            private long lastSendLog = System.currentTimeMillis();
-
-            @Override
-            protected void onUpdate(String taskName, int workCurr) {
-                sendLog(taskName, workCurr);
-            }
-
-            @Override
-            protected void onEndTask(String taskName, int workCurr) {
-                sendLog(taskName, workCurr);
-            }
-
-            private void sendLog(String taskName, int workCurr) {
-                if (System.currentTimeMillis() - lastSendLog >= interval) {
-                    lastSendLog = System.currentTimeMillis();
-                    sendLogText(String.format("[1.下载代码] %1$s: %2$s", taskName, workCurr));
-                }
-            }
-
-            @Override
-            protected void onUpdate(String taskName, int workCurr, int workTotal, int percentDone) {
-                sendLog(taskName, workCurr, workTotal, percentDone);
-            }
-
-            @Override
-            protected void onEndTask(String taskName, int workCurr, int workTotal, int percentDone) {
-                sendLog(taskName, workCurr, workTotal, percentDone);
-            }
-
-            private void sendLog(String taskName, int workCurr, int workTotal, int percentDone) {
-                if (System.currentTimeMillis() - lastSendLog >= interval) {
-                    lastSendLog = System.currentTimeMillis();
-                    sendLogText(String.format("[1.下载代码] %1$s: %2$s%% (%3$s/%4$s)", taskName, percentDone, workCurr, workTotal));
-                }
-            }
-        };
+        GitProgressMonitor gitProgressMonitor = new GitProgressMonitor(this::sendConsoleLogText);
 
         if (Objects.equals(CodeRepository.Repository_Type_Git, codeRepository.getRepositoryType())) {
             // Git 代码仓库
@@ -222,7 +181,7 @@ public class BuildImageTask extends Thread {
                 sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", gitBranch.getBranch(), gitBranch.getCommitId()));
                 imageConfig.setCommitId(gitBranch.getCommitId());
                 // 不需要授权
-                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), progressMonitor);
+                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), gitProgressMonitor);
             } else if (Objects.equals(CodeRepository.Authorization_Type_1, codeRepository.getAuthorizationType())) {
                 CodeRepository.UserNameAndPassword userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(codeRepository.getAuthorizationInfo(), CodeRepository.UserNameAndPassword.class);
                 if (userNameAndPassword == null) {
@@ -232,7 +191,7 @@ public class BuildImageTask extends Thread {
                 sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", gitBranch.getBranch(), gitBranch.getCommitId()));
                 imageConfig.setCommitId(gitBranch.getCommitId());
                 // 用户名密码
-                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword(), progressMonitor);
+                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword(), gitProgressMonitor);
             } else {
                 sendCompleteMessage("不支持的代码仓库授权类型");
                 return;
@@ -249,9 +208,19 @@ public class BuildImageTask extends Thread {
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
         if (Objects.equals(ImageConfig.buildType_Maven, imageConfig.getBuildType())) {
             sendLogText("[2.编译代码] 使用Maven编译项目");
-            CodeCompileUtils.mvn(new IConsoleOutput() {
+            CodeCompileUtils.mvn(new ConsoleOutput() {
                                      @Override
                                      public void output(String str) {
+//                                         if (str.contains("\b")) {
+//                                             log.info("############123456 b {}", str.replace('\b', '#'));
+//                                         }
+//                                         if (str.contains("\r")) {
+//                                             log.info("############123456 r {}", str.replace('\r', '#'));
+//                                         }
+//                                         if (str.contains("\033[k")) {
+//                                             log.info("############123456 \\033[k {}", str.replace("\033[k", "#"));
+//                                         }
+                                         str = str.replace("\r\n", "\n");
                                          sendConsoleLogText(str);
                                      }
 
@@ -286,7 +255,7 @@ public class BuildImageTask extends Thread {
         }
 
         // 发送任务结束消息
-        sendCompleteMessage("------------------------------------------------------------- 镜像构建成功 -------------------------------------------------------------");
+        sendCompleteMessage("------------------------------------------------------------- 5.镜像构建成功 -------------------------------------------------------------");
         imageConfig.setBuildState(ImageConfig.buildState_S);
         imageConfig.setBuildEndTime(new Date());
         imageConfig.setBuildLogs(allLogText.toString());
@@ -308,14 +277,22 @@ public class BuildImageTask extends Thread {
         if (str == null) {
             return;
         }
+        // 处理控制台控制字符
         for (int i = 0; i < str.length(); i++) {
             char ch = str.charAt(i);
-            if ('\b' == ch) {
-                allLogText.deleteCharAt(allLogText.length() - 1);
-            } else {
-                allLogText.append(ch);
+            switch (ch) {
+                case '\b':
+                    allLogText.deleteCharAt(allLogText.length() - 1);
+                    break;
+//                case '\r':
+//                    int start = allLogText.lastIndexOf("\n") + 1;
+//                    allLogText.delete(start, allLogText.length());
+//                    break;
+                default:
+                    allLogText.append(ch);
             }
         }
+        // 输出数据
         buildImageRes.setLogText(str);
         buildImageRes.setComplete(false);
         sendMessage(buildImageRes);

@@ -2,8 +2,8 @@ package org.clever.devops;
 
 import lombok.extern.slf4j.Slf4j;
 import org.clever.devops.utils.CodeCompileUtils;
+import org.clever.devops.utils.ConsoleOutput;
 import org.clever.devops.utils.ExecShellUtils;
-import org.clever.devops.utils.IConsoleOutput;
 import org.junit.Test;
 
 /**
@@ -13,7 +13,7 @@ import org.junit.Test;
 @Slf4j
 public class Test03 {
 
-    private IConsoleOutput consoleOutput = new IConsoleOutput() {
+    private ConsoleOutput consoleOutput = new ConsoleOutput() {
         @Override
         public void output(String line) {
             log.info(line);
@@ -52,5 +52,14 @@ public class Test03 {
                 "G:",
                 "java -cp clever-devops-model-1.0.0-SNAPSHOT.jar org.clever.devops.App",
         });
+    }
+
+    @Test
+    public void test04() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("0123456789\n9876543210\n");
+        int start = sb.lastIndexOf("\n") + 1;
+        sb.delete(start, sb.length());
+        log.info(sb.toString());
     }
 }

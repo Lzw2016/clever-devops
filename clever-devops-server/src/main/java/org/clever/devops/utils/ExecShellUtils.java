@@ -24,7 +24,7 @@ public class ExecShellUtils {
      * @param consoleOutput 回调接口
      * @param commands      需要执行的命令
      */
-    public static void exec(IConsoleOutput consoleOutput, String[] commands) {
+    public static void exec(ConsoleOutput consoleOutput, String[] commands) {
         String cmd;
         if (OSValidatorUtils.isWindows()) {
             // Windows

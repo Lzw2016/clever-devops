@@ -5,7 +5,7 @@ package org.clever.devops.utils;
  * 作者： lzw<br/>
  * 创建时间：2017-12-14 10:47 <br/>
  */
-public interface IConsoleOutput {
+public interface ConsoleOutput {
 
     /**
      * 控制台输出数据

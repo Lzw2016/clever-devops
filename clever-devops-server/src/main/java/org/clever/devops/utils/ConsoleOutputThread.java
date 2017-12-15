@@ -15,10 +15,10 @@ import java.nio.charset.Charset;
  */
 @Slf4j
 public class ConsoleOutputThread extends Thread {
-    private IConsoleOutput consoleOutput;
+    private ConsoleOutput consoleOutput;
     private InputStream inputStream;
 
-    public ConsoleOutputThread(IConsoleOutput consoleOutput, InputStream inputStream) {
+    public ConsoleOutputThread(ConsoleOutput consoleOutput, InputStream inputStream) {
         this.consoleOutput = consoleOutput;
         this.inputStream = inputStream;
     }

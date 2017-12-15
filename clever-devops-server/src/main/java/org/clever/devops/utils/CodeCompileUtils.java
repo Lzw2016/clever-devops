@@ -24,7 +24,7 @@ public class CodeCompileUtils {
      * @param projectPath   项目路径
      * @param args          mvn 参数
      */
-    public static void mvn(IConsoleOutput consoleOutput, String projectPath, String[] args) {
+    public static void mvn(ConsoleOutput consoleOutput, String projectPath, String[] args) {
         File file = new File(projectPath);
         // projectPath 不是文件夹或不存在
         if (!file.exists() || !file.isDirectory()) {
