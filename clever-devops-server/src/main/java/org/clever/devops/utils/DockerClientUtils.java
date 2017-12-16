@@ -11,6 +11,7 @@ import org.clever.common.model.exception.BusinessException;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.config.GlobalConfig;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,9 +54,13 @@ public class DockerClientUtils {
      * @return 返回 ImageId
      */
     public static String buildImage(BuildImageResultCallback callback, String dockerfilePath, Map<String, String> args, Map<String, String> labels, Set<String> tags) {
+        File dockerfile = new File(dockerfilePath);
+        if (!dockerfile.exists() || !dockerfile.isFile()) {
+            throw new BusinessException(String.format("Dockerfile文件[%1$s]不存在", dockerfilePath));
+        }
         try (DockerClient dockerClient = newDockerClient()) {
             BuildImageCmd buildImageCmd = dockerClient.buildImageCmd();
-            buildImageCmd.withDockerfilePath(dockerfilePath);
+            buildImageCmd.withDockerfile(dockerfile);
             if (args != null) {
                 for (Map.Entry<String, String> arg : args.entrySet()) {
                     buildImageCmd.withBuildArg(arg.getKey(), arg.getValue());

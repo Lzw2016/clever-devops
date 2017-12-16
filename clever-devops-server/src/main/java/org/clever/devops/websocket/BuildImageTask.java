@@ -227,8 +227,24 @@ public class BuildImageTask extends Thread {
         imageConfig.setBuildState(ImageConfig.buildState_3);
         imageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
-//        DockerClientUtils.buildImage()
-
+        Map<String, String> args = new HashMap<>();
+        args.put("args1", "value1");
+        args.put("args2", "value2");
+        args.put("args3", "value3");
+        Map<String, String> labels = new HashMap<>();
+        labels.put("labels1", "value1");
+        labels.put("labels2", "value2");
+        labels.put("labels3", "value3");
+        Set<String> tags = new HashSet<>();
+        tags.add("tags1");
+        tags.add("tags2");
+        tags.add("tags3");
+        String imageId = DockerClientUtils.buildImage(
+                new BuildImageProgressMonitor(this::sendConsoleLogText),
+                FilenameUtils.concat(imageConfig.getCodeDownloadPath(), imageConfig.getDockerFilePath()),
+                args, labels, tags);
+        imageConfig.setImageId(imageId);
+        imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
 
         sendLogText("------------------------------------------------------------- 4.清除临时文件 -------------------------------------------------------------");
         // 删除下载的代码

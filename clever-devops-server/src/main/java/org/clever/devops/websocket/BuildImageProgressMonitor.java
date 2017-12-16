@@ -5,6 +5,7 @@ import com.github.dockerjava.api.model.ResponseItem;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.clever.devops.utils.BackspaceStringUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -29,6 +30,11 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
      * 任务信息 ID -> progress (id: status progress errorDetail)
      */
     private Map<String, String> taskMap = new LinkedHashMap<>();
+
+    /**
+     * 上一次发送的进度消息
+     */
+    private String oldProgressMessage;
 
     /**
      * 输出到WebSocket客户端 接口
@@ -56,9 +62,6 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
         // 设置任务进度信息
         ResponseItem.ProgressDetail progressDetail = item.getProgressDetail();
         if (progressDetail != null || StringUtils.isNotBlank(status)) {
-            if (oldProgress != null) {
-                // TODO 删除 oldProgress 字符
-            }
             // 格式 id: status progress
             progress = String.format("%1$s: %2$s %3$s", item.getId(), status, progressText);
         }
@@ -90,10 +93,16 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
         for (Map.Entry<String, String> task : taskMap.entrySet()) {
             stringBuilder.append(task.getValue()).append("\n");
         }
-        stringBuilder.append("\n\n");
+        stringBuilder.append("\n");
         for (String str : stream) {
             stringBuilder.append(str);
         }
-        progressMonitorToWebSocket.sendMsg(stringBuilder.toString());
+        // 输出 发送进度消息
+        String backspaceStr = "";
+        if (oldProgressMessage != null) {
+            backspaceStr = BackspaceStringUtils.getBackspaceStr(oldProgressMessage.length());
+        }
+        oldProgressMessage = stringBuilder.toString();
+        progressMonitorToWebSocket.sendMsg(backspaceStr + oldProgressMessage);
     }
 }

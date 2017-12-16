@@ -38,6 +38,8 @@ public class Test01 {
 
     @Test
     public void test01() throws IOException {
+        StringBuilder stringBuilder = new StringBuilder();
+
         String dockerfilePath = "E:\\Source\\clever-devops\\Dockerfile";
         Map<String, String> labels = new HashMap<>();
         labels.put("labels1", "value1");
@@ -50,20 +52,20 @@ public class Test01 {
         DockerClient dockerClient = newDockerClient();
         dockerClient.buildImageCmd()
                 .withDockerfile(new File(dockerfilePath))
+//                .withDockerfilePath(dockerfilePath)
                 .withBuildArg("args1", "value1")
                 .withBuildArg("args2", "value2")
                 .withBuildArg("args3", "value3")
                 .withLabels(labels)
                 .withTags(tags)
-                .exec(new BuildImageProgressMonitor(new ProgressMonitorToWebSocket() {
-                    @Override
-                    public void sendMsg(String msg) {
-                        System.out.println(msg);
-                        System.out.println("------------------------------------------------------------------------------------------------------------");
-                    }
+                .exec(new BuildImageProgressMonitor(msg -> {
+                    stringBuilder.append(msg);
+                    System.out.println(msg);
+                    System.out.println("------------------------------------------------------------------------------------------------------------");
                 })).awaitImageId();
 
         dockerClient.close();
+        System.out.println(stringBuilder.toString());
     }
 
     @Test

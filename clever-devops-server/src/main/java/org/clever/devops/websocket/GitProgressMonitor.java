@@ -1,5 +1,6 @@
 package org.clever.devops.websocket;
 
+import org.clever.devops.utils.BackspaceStringUtils;
 import org.eclipse.jgit.lib.BatchingProgressMonitor;
 
 import java.util.LinkedHashMap;
@@ -49,19 +50,6 @@ public class GitProgressMonitor extends BatchingProgressMonitor {
     }
 
     /**
-     * 返回退格字符
-     *
-     * @param count 退格字符数量
-     */
-    private String getBackspaceStr(int count) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < count; i++) {
-            sb.append('\b');
-        }
-        return sb.toString();
-    }
-
-    /**
      * 发送进度消息
      *
      * @param taskName 任务名
@@ -71,7 +59,7 @@ public class GitProgressMonitor extends BatchingProgressMonitor {
         final String oldProgress = taskMap.get(taskName);
         String backspaceStr = null;
         if (oldProgress != null) {
-            backspaceStr = getBackspaceStr(oldProgress.length());
+            backspaceStr = BackspaceStringUtils.getBackspaceStr(oldProgress.length());
         }
         taskMap.put(taskName, progress);
         // 输出到WebSocket客户端
