@@ -14,10 +14,7 @@ import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
-import org.clever.devops.utils.CodeCompileUtils;
-import org.clever.devops.utils.ConsoleOutput;
-import org.clever.devops.utils.GitUtils;
-import org.clever.devops.utils.WebSocketCloseSessionUtils;
+import org.clever.devops.utils.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -211,15 +208,6 @@ public class BuildImageTask extends Thread {
             CodeCompileUtils.mvn(new ConsoleOutput() {
                                      @Override
                                      public void output(String str) {
-//                                         if (str.contains("\b")) {
-//                                             log.info("############123456 b {}", str.replace('\b', '#'));
-//                                         }
-//                                         if (str.contains("\r")) {
-//                                             log.info("############123456 r {}", str.replace('\r', '#'));
-//                                         }
-//                                         if (str.contains("\033[k")) {
-//                                             log.info("############123456 \\033[k {}", str.replace("\033[k", "#"));
-//                                         }
                                          sendConsoleLogText(str);
                                      }
 
@@ -239,6 +227,8 @@ public class BuildImageTask extends Thread {
         imageConfig.setBuildState(ImageConfig.buildState_3);
         imageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
+//        DockerClientUtils.buildImage()
+
 
         sendLogText("------------------------------------------------------------- 4.清除临时文件 -------------------------------------------------------------");
         // 删除下载的代码
@@ -278,7 +268,7 @@ public class BuildImageTask extends Thread {
         }
         // 统一换行处理
         str = str.replace("\r\n", "\n");
-        // 处理控制台控制字符 TODO 尝试使用 AnsiString.chew() -> AnsiOutputStream
+        // 处理控制台控制字符
         for (int i = 0; i < str.length(); i++) {
             char ch = str.charAt(i);
             switch (ch) {

@@ -16,15 +16,15 @@ import java.util.List;
  */
 public class CodeCompileUtils {
 
-
     /**
      * 使用 mvn 命令编译打包项目
      *
      * @param consoleOutput 控制台回调
      * @param projectPath   项目路径
      * @param args          mvn 参数
+     * @return 编译成功返回true
      */
-    public static void mvn(ConsoleOutput consoleOutput, String projectPath, String[] args) {
+    public static boolean mvn(ConsoleOutput consoleOutput, String projectPath, String[] args) {
         File file = new File(projectPath);
         // projectPath 不是文件夹或不存在
         if (!file.exists() || !file.isDirectory()) {
@@ -49,6 +49,6 @@ public class CodeCompileUtils {
         }
         commands.add(sb.toString());
         // 执行命令
-        ExecShellUtils.exec(consoleOutput, commands.toArray(new String[commands.size()]));
+        return ExecShellUtils.exec(consoleOutput, commands.toArray(new String[commands.size()])) == 0;
     }
 }

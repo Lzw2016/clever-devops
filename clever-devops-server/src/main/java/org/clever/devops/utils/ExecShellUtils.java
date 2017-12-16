@@ -23,8 +23,10 @@ public class ExecShellUtils {
      *
      * @param consoleOutput 回调接口
      * @param commands      需要执行的命令
+     * @return 返回命令执行最后的返回值(一般成功返回 0)
      */
-    public static void exec(ConsoleOutput consoleOutput, String[] commands) {
+    public static int exec(ConsoleOutput consoleOutput, String[] commands) {
+        int result = -1;
         String cmd;
         if (OSValidatorUtils.isWindows()) {
             // Windows
@@ -54,7 +56,7 @@ public class ExecShellUtils {
         }
         stdin.close();
         try {
-            process.waitFor();
+            result = process.waitFor();
         } catch (InterruptedException e) {
             log.error("进程被中断", e);
         }
@@ -62,5 +64,6 @@ public class ExecShellUtils {
         if (consoleOutput != null) {
             consoleOutput.completed();
         }
+        return result;
     }
 }

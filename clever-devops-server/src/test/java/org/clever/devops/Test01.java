@@ -1,7 +1,6 @@
 package org.clever.devops;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.model.Info;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -10,10 +9,13 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.swarm.Swarm;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.mapper.JacksonMapper;
+import org.clever.devops.websocket.BuildImageProgressMonitor;
+import org.clever.devops.websocket.ProgressMonitorToWebSocket;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 
 /**
  * 作者：lizw <br/>
@@ -22,18 +24,45 @@ import java.util.List;
 @Slf4j
 public class Test01 {
 
-    private static final String dockerHost = "tcp://10.255.8.215:2375";
+    private static final String dockerHost = "tcp://192.168.159.131:2375";
     private static final String version = "1.33";
+
+    public DockerClient newDockerClient() {
+        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
+                .withDockerHost(dockerHost)
+                .withApiVersion(version)
+                .build();
+
+        return DockerClientBuilder.getInstance(config).build();
+    }
 
     @Test
     public void test01() throws IOException {
-        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost(dockerHost)
-//                .withApiVersion(version)
-                .build();
-        DockerClient dockerClient = DockerClientBuilder.getInstance(config).build();
-        Info info = dockerClient.infoCmd().exec();
-        log.info(JacksonMapper.nonEmptyMapper().toJson(info));
+        String dockerfilePath = "E:\\Source\\clever-devops\\Dockerfile";
+        Map<String, String> labels = new HashMap<>();
+        labels.put("labels1", "value1");
+        labels.put("labels2", "value2");
+        labels.put("labels3", "value3");
+        Set<String> tags = new HashSet<>();
+        tags.add("tags1");
+        tags.add("tags2");
+        tags.add("tags3");
+        DockerClient dockerClient = newDockerClient();
+        dockerClient.buildImageCmd()
+                .withDockerfile(new File(dockerfilePath))
+                .withBuildArg("args1", "value1")
+                .withBuildArg("args2", "value2")
+                .withBuildArg("args3", "value3")
+                .withLabels(labels)
+                .withTags(tags)
+                .exec(new BuildImageProgressMonitor(new ProgressMonitorToWebSocket() {
+                    @Override
+                    public void sendMsg(String msg) {
+                        System.out.println(msg);
+                        System.out.println("------------------------------------------------------------------------------------------------------------");
+                    }
+                })).awaitImageId();
+
         dockerClient.close();
     }
 
@@ -48,6 +77,8 @@ public class Test01 {
 //        docker.createContainer()
 
 //        docker.createService(ServiceSpec.builder().)
+
+//        docker.build()
 
         List<com.spotify.docker.client.messages.Container> containers = docker.listContainers();
         for (com.spotify.docker.client.messages.Container container : containers) {

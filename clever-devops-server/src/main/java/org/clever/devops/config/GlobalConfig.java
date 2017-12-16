@@ -27,4 +27,14 @@ public class GlobalConfig {
      * Maven的Settings文件路径
      */
     private String mavenSettingsPath;
+
+    /**
+     * Docker 主机地址
+     */
+    private String dockerHost;
+
+    /**
+     * Docker API 版本
+     */
+    private String dockerVersion;
 }

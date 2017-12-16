@@ -6,7 +6,7 @@ package org.clever.devops.websocket;
  * 作者： lzw<br/>
  * 创建时间：2017-12-15 11:08 <br/>
  */
-public interface SendToWebSocketClient {
+public interface ProgressMonitorToWebSocket {
 
     /**
      * 发送消息到WebSocket客户端

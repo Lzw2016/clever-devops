@@ -2,7 +2,7 @@ package org.clever.devops.websocket;
 
 import org.eclipse.jgit.lib.BatchingProgressMonitor;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -16,16 +16,16 @@ public class GitProgressMonitor extends BatchingProgressMonitor {
     /**
      * 任务信息 taskName -> progress
      */
-    private Map<String, String> taskMap = new HashMap<>();
+    private Map<String, String> taskMap = new LinkedHashMap<>();
 
     /**
      * 输出到WebSocket客户端 接口
      */
-    private SendToWebSocketClient sendToWebSocketClient;
+    private ProgressMonitorToWebSocket progressMonitorToWebSocket;
 
-    public GitProgressMonitor(SendToWebSocketClient sendToWebSocketClient) {
+    public GitProgressMonitor(ProgressMonitorToWebSocket progressMonitorToWebSocket) {
         super();
-        this.sendToWebSocketClient = sendToWebSocketClient;
+        this.progressMonitorToWebSocket = progressMonitorToWebSocket;
     }
 
     @Override
@@ -78,7 +78,7 @@ public class GitProgressMonitor extends BatchingProgressMonitor {
         if (backspaceStr != null) {
             progress = backspaceStr + progress;
         }
-        sendToWebSocketClient.sendMsg(progress);
+        progressMonitorToWebSocket.sendMsg(progress);
     }
 
     private void sendLog(String taskName, int workCurr) {
