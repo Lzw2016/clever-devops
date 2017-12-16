@@ -56,6 +56,7 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
             stream.add(item.getStream());
         }
         // 处理进度字段
+        String itemId = item.getId() == null ? "" : item.getId();
         String status = item.getStatus() == null ? "" : item.getStatus();
         @SuppressWarnings("deprecation")
         String progressText = item.getProgress() == null ? "" : item.getProgress();
@@ -63,7 +64,7 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
         ResponseItem.ProgressDetail progressDetail = item.getProgressDetail();
         if (progressDetail != null || StringUtils.isNotBlank(status)) {
             // 格式 id: status progress
-            progress = String.format("%1$s: %2$s %3$s", item.getId(), status, progressText);
+            progress = String.format("%1$s: %2$s %3$s", itemId, status, progressText);
         }
         // 设置错误信息 id: status progress errorDetail
         if (item.getErrorDetail() != null) {
@@ -74,7 +75,7 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
                 progress = String.format("%1$s %2$s", oldProgress, errorDetail);
             } else {
                 // 格式 id: status progress
-                progress = String.format("%1$s: %2$s %3$s %4$s", item.getId(), status, progressText, errorDetail);
+                progress = String.format("%1$s: %2$s %3$s %4$s", itemId, status, progressText, errorDetail);
             }
         }
         // 设置进度
