@@ -2,7 +2,6 @@ package org.clever.devops.websocket;
 
 import io.netty.util.internal.ConcurrentSet;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
@@ -12,9 +11,11 @@ import org.clever.devops.config.GlobalConfig;
 import org.clever.devops.dto.response.BuildImageRes;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
-import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
-import org.clever.devops.utils.*;
+import org.clever.devops.utils.CodeRepositoryUtils;
+import org.clever.devops.utils.ConsoleOutput;
+import org.clever.devops.utils.DockerClientUtils;
+import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -22,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.io.File;
 import java.util.*;
 
 /**
@@ -39,9 +39,9 @@ public class BuildImageTask extends Thread {
     @Autowired
     private GlobalConfig globalConfig;
     @Autowired
-    private CodeRepositoryMapper codeRepositoryMapper;
-    @Autowired
     private ImageConfigMapper imageConfigMapper;
+    //    @Autowired
+//    private CodeRepositoryMapper codeRepositoryMapper;
 
     /**
      * 连接当前任务的Session集合
@@ -143,90 +143,134 @@ public class BuildImageTask extends Thread {
 //    @Transactional(propagation = Propagation.NEVER)
     @Override
     public void run() {
-        // 设置
-        buildImageRes.setStartTime(System.currentTimeMillis());
-        sendLogText("------------------------------------------------------------- 1.下载代码 -------------------------------------------------------------");
-        // 删除之前下载的代码
-        if (StringUtils.isNotBlank(imageConfig.getCodeDownloadPath())) {
-            File deleteFile = new File(imageConfig.getCodeDownloadPath());
-            if (deleteFile.exists()) {
-                try {
-                    FileUtils.forceDelete(deleteFile);
-                    sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除成功");
-                } catch (Throwable e) {
-                    log.error("删除下载的代码文件失败", e);
-                    sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除失败");
-                }
-            }
+        Character buildState = ImageConfig.buildState_F;
+        try {
+            // 设置 -- 开始构建时的时间戳
+            buildImageRes.setStartTime(System.currentTimeMillis());
+            // 更新 ImageConfig 状态
+            ImageConfig updateImageConfig = new ImageConfig();
+            updateImageConfig.setId(imageConfig.getId());
+            updateImageConfig.setBuildState(ImageConfig.buildState_1);
+            updateImageConfig.setBuildStartTime(new Date());
+            updateImageConfig.setUpdateDate(new Date());
+            imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+            // 1.下载代码
+            downloadCode();
+            // 2.编译代码
+            compileCode();
+            // 3.构建镜像
+            buildImage();
+            // 4.清除临时文件
+            clearTmpFile();
+            // 镜像构建成功
+            buildState = ImageConfig.buildState_S;
+            sendCompleteMessage("------------------------------------------------------------- 镜像构建成功 -------------------------------------------------------------");
+        } catch (Throwable e) {
+            buildState = ImageConfig.buildState_F;
+            sendLogText(String.format("镜像构建失败，错误原因: %1$s", e.getMessage()));
+            sendCompleteMessage("------------------------------------------------------------- 镜像构建失败 -------------------------------------------------------------");
+            log.error("镜像构建失败", e);
+        } finally {
+            ImageConfig updateImageConfig = new ImageConfig();
+            updateImageConfig.setId(imageConfig.getId());
+            updateImageConfig.setBuildState(buildState);
+            updateImageConfig.setBuildEndTime(new Date());
+            updateImageConfig.setBuildLogs(allLogText.toString());
+            updateImageConfig.setUpdateDate(new Date());
+            imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
         }
-        imageConfig.setBuildState(ImageConfig.buildState_1);
-        imageConfig.setBuildStartTime(new Date());
-        imageConfig.setCodeDownloadPath(FilenameUtils.concat(globalConfig.getCodeDownloadPath(), UUID.randomUUID().toString()));
-        imageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
+    }
+
+    /**
+     * 1.下载代码
+     */
+    private void downloadCode() {
+        // 验证代码仓库类型是否支持
         if (!Objects.equals(CodeRepository.Repository_Type_Git, codeRepository.getRepositoryType())) {
-            sendCompleteMessage("暂时只支持Git仓库");
-            return;
+            throw new BusinessException("暂时只支持Git仓库");
         }
-        // 更新CommitID -> 下载代码
-        GitProgressMonitor gitProgressMonitor = new GitProgressMonitor(this::sendConsoleLogText);
-
-        if (Objects.equals(CodeRepository.Repository_Type_Git, codeRepository.getRepositoryType())) {
-            // Git 代码仓库
-            if (Objects.equals(CodeRepository.Authorization_Type_0, codeRepository.getAuthorizationType())) {
-                ImageConfig.GitBranch gitBranch = GitUtils.getBranch(codeRepository.getRepositoryUrl(), imageConfig.getBranch());
-                sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", gitBranch.getBranch(), gitBranch.getCommitId()));
-                imageConfig.setCommitId(gitBranch.getCommitId());
-                // 不需要授权
-                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), gitProgressMonitor);
-            } else if (Objects.equals(CodeRepository.Authorization_Type_1, codeRepository.getAuthorizationType())) {
-                CodeRepository.UserNameAndPassword userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(codeRepository.getAuthorizationInfo(), CodeRepository.UserNameAndPassword.class);
-                if (userNameAndPassword == null) {
-                    throw new BusinessException("读取授权用户名密码失败");
-                }
-                ImageConfig.GitBranch gitBranch = GitUtils.getBranch(codeRepository.getRepositoryUrl(), imageConfig.getBranch(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword());
-                sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", gitBranch.getBranch(), gitBranch.getCommitId()));
-                imageConfig.setCommitId(gitBranch.getCommitId());
-                // 用户名密码
-                GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword(), gitProgressMonitor);
-            } else {
-                sendCompleteMessage("不支持的代码仓库授权类型");
-                return;
-            }
+        sendLogText("------------------------------------------------------------- 1.下载代码 -------------------------------------------------------------");
+        // 删除之前下载的代码文件
+        if (CodeRepositoryUtils.deleteCode(imageConfig)) {
+            sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除成功");
         } else {
-            sendCompleteMessage("暂时只支持Git仓库");
-            return;
+            sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除失败");
         }
+        // 更新 -- 代码下载临时文件夹路径
+        ImageConfig updateImageConfig = new ImageConfig();
+        updateImageConfig.setId(imageConfig.getId());
+        updateImageConfig.setCodeDownloadPath(FilenameUtils.concat(globalConfig.getCodeDownloadPath(), UUID.randomUUID().toString()));
+        updateImageConfig.setUpdateDate(new Date());
+        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        // 更新CommitID -> 下载代码
+        String commitId = null;
+        switch (codeRepository.getRepositoryType()) {
+            case CodeRepository.Repository_Type_Git:
+                ImageConfig.GitBranch gitBranch = CodeRepositoryUtils.getBranch(codeRepository, imageConfig.getBranch());
+                if (gitBranch != null) {
+                    commitId = gitBranch.getCommitId();
+                }
+                break;
+            case CodeRepository.Repository_Type_Svn:
+                break;
+        }
+        if (StringUtils.isBlank(commitId)) {
+            throw new BusinessException("读取最新的CommitID失败");
+        }
+        sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", imageConfig.getBranch(), imageConfig.getCommitId()));
+        // 更新CommitID
+        updateImageConfig = new ImageConfig();
+        updateImageConfig.setId(imageConfig.getId());
+        updateImageConfig.setCommitId(commitId);
+        updateImageConfig.setUpdateDate(new Date());
+        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        // 下载代码
+        CodeRepositoryUtils.downloadCode(codeRepository, imageConfig, this::sendConsoleLogText);
         sendLogText("[1.下载代码] 完成");
+    }
 
-        sendLogText("------------------------------------------------------------- 2.编译代码 -------------------------------------------------------------");
-        imageConfig.setBuildState(ImageConfig.buildState_2);
-        imageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
-        if (Objects.equals(ImageConfig.buildType_Maven, imageConfig.getBuildType())) {
-            sendLogText("[2.编译代码] 使用Maven编译项目");
-            CodeCompileUtils.mvn(new ConsoleOutput() {
-                                     @Override
-                                     public void output(String str) {
-                                         sendConsoleLogText(str);
-                                     }
-
-                                     @Override
-                                     public void completed() {
-                                         sendConsoleLogText("\n[2.编译代码] 编译完成\n");
-                                     }
-                                 },
-                    imageConfig.getCodeDownloadPath(),
-                    new String[]{imageConfig.getBuildCmd(), String.format("--global-settings=%1$s", globalConfig.getMavenSettingsPath())});
-        } else if (Objects.equals(ImageConfig.buildType_npm, imageConfig.getBuildType())) {
-            sendCompleteMessage("暂时只支持Maven编译");
-            return;
+    /**
+     * 2.编译代码
+     */
+    private void compileCode() {
+        // 验证代码编译类型
+        if (!Objects.equals(ImageConfig.buildType_Maven, imageConfig.getBuildType())) {
+            throw new BusinessException("暂时只支持使用Maven编译");
         }
+        sendLogText("------------------------------------------------------------- 2.编译代码 -------------------------------------------------------------");
+        // 更新 -- ImageConfig 编译状态
+        ImageConfig updateImageConfig = new ImageConfig();
+        updateImageConfig.setId(imageConfig.getId());
+        updateImageConfig.setBuildState(ImageConfig.buildState_2);
+        updateImageConfig.setUpdateDate(new Date());
+        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        // 编译代码
+        CodeRepositoryUtils.compileCode(imageConfig, new ConsoleOutput() {
+            @Override
+            public void output(String str) {
+                sendConsoleLogText(str);
+            }
 
+            @Override
+            public void completed() {
+                sendConsoleLogText("\n[2.编译代码] 编译完成\n");
+            }
+        });
+    }
+
+    /**
+     * 3.构建镜像
+     */
+    private void buildImage() {
         sendLogText("------------------------------------------------------------- 3.构建镜像 -------------------------------------------------------------");
-        imageConfig.setBuildState(ImageConfig.buildState_3);
-        imageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
+        // 更新 -- ImageConfig 编译状态
+        ImageConfig updateImageConfig = new ImageConfig();
+        updateImageConfig.setId(imageConfig.getId());
+        updateImageConfig.setBuildState(ImageConfig.buildState_3);
+        updateImageConfig.setUpdateDate(new Date());
+        updateImageConfig.setId(imageConfig.getId());
+        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        // 构建镜像
         Map<String, String> args = new HashMap<>();
         args.put("args1", "value1");
         args.put("args2", "value2");
@@ -241,38 +285,29 @@ public class BuildImageTask extends Thread {
                 new BuildImageProgressMonitor(this::sendConsoleLogText),
                 FilenameUtils.concat(imageConfig.getCodeDownloadPath(), imageConfig.getDockerFilePath()),
                 args, labels, tags);
-        imageConfig.setImageId(imageId);
-        imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
-
-        sendLogText("------------------------------------------------------------- 4.清除临时文件 -------------------------------------------------------------");
-        // 删除下载的代码
-        File deleteFile = new File(imageConfig.getCodeDownloadPath());
-        if (deleteFile.exists()) {
-            try {
-                FileUtils.forceDelete(deleteFile);
-                sendLogText("[4.清除临时文件] 删除下载的代码成功");
-            } catch (Throwable e) {
-                log.error("删除下载的代码文件失败", e);
-                sendLogText("[4.清除临时文件] 删除下载的代码失败");
-            }
-        }
-
-        // 发送任务结束消息
-        sendCompleteMessage("------------------------------------------------------------- 5.镜像构建成功 -------------------------------------------------------------");
-        imageConfig.setBuildState(ImageConfig.buildState_S);
-        imageConfig.setBuildEndTime(new Date());
-        imageConfig.setBuildLogs(allLogText.toString());
-        imageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
-    }
-
-
-    private void downloadCodeByGit() {
-
+        // 更新 -- ImageConfig 镜像ID
+        updateImageConfig = new ImageConfig();
+        updateImageConfig.setId(imageConfig.getId());
+        updateImageConfig.setImageId(imageId);
+        updateImageConfig.setUpdateDate(new Date());
+        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
     }
 
     /**
-     * 发送控制台输出到所有的客户端 (处理“\b”字符)
+     * 4.清除临时文件
+     */
+    private void clearTmpFile() {
+        sendLogText("------------------------------------------------------------- 4.清除临时文件 -------------------------------------------------------------");
+        // 删除下载的代码
+        if (CodeRepositoryUtils.deleteCode(imageConfig)) {
+            sendLogText("[4.清除临时文件] 删除下载的代码成功");
+        } else {
+            sendLogText("[4.清除临时文件] 删除下载的代码失败");
+        }
+    }
+
+    /**
+     * 发送控制台输出到所有的客户端 (处理“\b”、“\r”字符)
      *
      * @param str 控制台输出
      */
