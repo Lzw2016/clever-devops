@@ -10,6 +10,7 @@ import org.clever.devops.dto.request.CodeRepositoryQueryReq;
 import org.clever.devops.dto.request.CodeRepositoryUpdateReq;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.mapper.CodeRepositoryMapper;
+import org.clever.devops.mapper.ImageConfigMapper;
 import org.clever.devops.utils.CodeRepositoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,8 @@ public class CodeRepositoryService extends BaseService {
 
     @Autowired
     private CodeRepositoryMapper codeRepositoryMapper;
+    @Autowired
+    private ImageConfigMapper imageConfigMapper;
 
     /**
      * 新增代码仓库
@@ -80,6 +83,11 @@ public class CodeRepositoryService extends BaseService {
         CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(id);
         if (codeRepository == null) {
             throw new BusinessException(String.format("代码仓库不存在，ID=%1$s", id));
+        }
+        // 校验其对应的所有对应是否在构建中
+        int buildingCount = imageConfigMapper.getBuildingCount(codeRepository.getId());
+        if (buildingCount > 0) {
+            throw new BusinessException("当前代码仓库下存在Docker镜像正在构建中，不能修改");
         }
         // 验证 项目名称 是否重复
         if (codeRepositoryUpdateReq.getProjectName() != null) {
