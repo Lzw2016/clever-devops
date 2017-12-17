@@ -1,6 +1,10 @@
 package org.clever.devops;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -9,8 +13,8 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.swarm.Swarm;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.mapper.JacksonMapper;
+import org.clever.devops.utils.DockerClientUtils;
 import org.clever.devops.websocket.BuildImageProgressMonitor;
-import org.clever.devops.websocket.ProgressMonitorToWebSocket;
 import org.junit.Test;
 
 import java.io.File;
@@ -90,4 +94,12 @@ public class Test01 {
         log.info(JacksonMapper.nonEmptyMapper().toJson(swarm));
         docker.close();
     }
+
+//    @Test
+//    public void test03() {
+//        List<PortBinding> portBindings = new ArrayList<>();
+//        portBindings.add(new PortBinding(Ports.Binding.bindPortRange(10000, 99999), ExposedPort.tcp(1314)));
+//        CreateContainerResponse response = DockerClientUtils.createContainer("60815f5cb49d", "admin-demo:1.0.0-SNAPSHOT", portBindings, null);
+//        log.info(response.toString());
+//    }
 }

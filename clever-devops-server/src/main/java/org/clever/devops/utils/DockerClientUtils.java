@@ -2,6 +2,10 @@ package org.clever.devops.utils;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -12,6 +16,7 @@ import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.config.GlobalConfig;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -73,6 +78,38 @@ public class DockerClientUtils {
                 buildImageCmd.withTags(tags);
             }
             return buildImageCmd.exec(callback).awaitImageId();
+        } catch (Throwable e) {
+            throw new BusinessException("构建Docker镜像失败", e);
+        }
+    }
+
+    /**
+     * 读取Docker的所有容器
+     */
+    public static List<Container> listContainers() {
+        List<Container> result;
+        try (DockerClient dockerClient = newDockerClient()) {
+            result = dockerClient.listContainersCmd().exec();
+        } catch (Throwable e) {
+            throw new BusinessException("构建Docker镜像失败", e);
+        }
+        return result;
+    }
+
+    public static CreateContainerResponse createContainer(String image, String name, List<PortBinding> portBindings, Map<String, String> labels) {
+        try (DockerClient dockerClient = newDockerClient()) {
+            CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image);
+//            createContainerCmd.withNetworkMode("ingress");
+            if (name != null) {
+                createContainerCmd.withName(name);
+            }
+            if (portBindings != null) {
+                createContainerCmd.withPortBindings(portBindings);
+            }
+            if (labels != null) {
+                createContainerCmd.withLabels(labels);
+            }
+            return createContainerCmd.exec();
         } catch (Throwable e) {
             throw new BusinessException("构建Docker镜像失败", e);
         }
