@@ -74,7 +74,7 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
             } else if (oldProgress != null) {
                 progress = String.format("%1$s %2$s", oldProgress, errorDetail);
             } else {
-                // 格式 id: status progress
+                // 格式 id: status progress errorDetail
                 progress = String.format("%1$s: %2$s %3$s %4$s", itemId, status, progressText, errorDetail);
             }
         }
