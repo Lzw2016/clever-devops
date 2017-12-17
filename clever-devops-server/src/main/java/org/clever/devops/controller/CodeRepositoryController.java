@@ -10,6 +10,7 @@ import org.clever.devops.dto.request.CodeRepositoryUpdateReq;
 import org.clever.devops.dto.request.TestGitConnectReq;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.service.CodeRepositoryService;
+import org.clever.devops.utils.CodeRepositoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -59,6 +60,6 @@ public class CodeRepositoryController extends BaseController {
     @ApiOperation("测试连接Git仓库")
     @PostMapping("/git_connect" + JSON_SUFFIX)
     public void testGitConnect(@RequestBody @Validated TestGitConnectReq testGitConnectReq) {
-        codeRepositoryService.testConnect(testGitConnectReq.getRepositoryUrl(), testGitConnectReq.getAuthorizationType(), testGitConnectReq.getAuthorizationInfo());
+        CodeRepositoryUtils.testConnect(testGitConnectReq.getRepositoryUrl(), testGitConnectReq.getAuthorizationType(), testGitConnectReq.getAuthorizationInfo());
     }
 }

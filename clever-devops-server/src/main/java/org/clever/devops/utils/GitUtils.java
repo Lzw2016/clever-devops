@@ -11,7 +11,9 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -132,6 +134,36 @@ public class GitUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * 获取“branch或Tag”信息
+     *
+     * @param repositoryUrl 代码仓库地址
+     */
+    public static List<ImageConfig.GitBranch> getAllBranch(String repositoryUrl) {
+        List<ImageConfig.GitBranch> result = new ArrayList<>();
+        Collection<Ref> refs = getBranch(repositoryUrl, true, true);
+        for (Ref ref : refs) {
+            result.add(new ImageConfig.GitBranch(ref.getObjectId().getName(), ref.getName()));
+        }
+        return result;
+    }
+
+    /**
+     * 获取“branch或Tag”信息
+     *
+     * @param repositoryUrl 代码仓库地址
+     * @param username      用户名
+     * @param password      密码
+     */
+    public static List<ImageConfig.GitBranch> getAllBranch(String repositoryUrl, String username, String password) {
+        List<ImageConfig.GitBranch> result = new ArrayList<>();
+        Collection<Ref> refs = getBranch(repositoryUrl, username, password, true, true);
+        for (Ref ref : refs) {
+            result.add(new ImageConfig.GitBranch(ref.getObjectId().getName(), ref.getName()));
+        }
+        return result;
     }
 
     /**

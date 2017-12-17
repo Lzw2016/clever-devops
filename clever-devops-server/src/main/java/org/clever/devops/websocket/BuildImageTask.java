@@ -236,9 +236,7 @@ public class BuildImageTask extends Thread {
         labels.put("labels2", "value2");
         labels.put("labels3", "value3");
         Set<String> tags = new HashSet<>();
-        tags.add("tags1");
-        tags.add("tags2");
-        tags.add("tags3");
+        tags.add("admin-demo:1.0.0-SNAPSHOT");
         String imageId = DockerClientUtils.buildImage(
                 new BuildImageProgressMonitor(this::sendConsoleLogText),
                 FilenameUtils.concat(imageConfig.getCodeDownloadPath(), imageConfig.getDockerFilePath()),

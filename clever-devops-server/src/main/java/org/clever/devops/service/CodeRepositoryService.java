@@ -5,13 +5,12 @@ import com.github.pagehelper.PageInfo;
 import org.clever.common.model.exception.BusinessException;
 import org.clever.common.server.service.BaseService;
 import org.clever.common.utils.mapper.BeanMapper;
-import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.dto.request.CodeRepositoryAddReq;
 import org.clever.devops.dto.request.CodeRepositoryQueryReq;
 import org.clever.devops.dto.request.CodeRepositoryUpdateReq;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.mapper.CodeRepositoryMapper;
-import org.clever.devops.utils.GitUtils;
+import org.clever.devops.utils.CodeRepositoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,12 +42,13 @@ public class CodeRepositoryService extends BaseService {
         if (!Objects.equals(codeRepositoryAddReq.getRepositoryType(), CodeRepository.Repository_Type_Git)) {
             throw new BusinessException("当前只支持GIT仓库");
         }
-        // 测试连接代码仓库地址
-        testConnect(codeRepositoryAddReq.getRepositoryUrl(), codeRepositoryAddReq.getAuthorizationType(), codeRepositoryAddReq.getAuthorizationInfo());
-        // 保存数据
+        // 构造 CodeRepository
         codeRepository = BeanMapper.mapper(codeRepositoryAddReq, CodeRepository.class);
         codeRepository.setCreateBy("");
         codeRepository.setCreateDate(new Date());
+        // 测试连接代码仓库地址
+        CodeRepositoryUtils.testConnect(codeRepository);
+        // 保存数据
         codeRepositoryMapper.insertSelective(codeRepository);
         return codeRepository;
     }
@@ -100,7 +100,7 @@ public class CodeRepositoryService extends BaseService {
             String repositoryUrl = codeRepositoryUpdateReq.getRepositoryUrl() != null ? codeRepositoryUpdateReq.getRepositoryUrl() : codeRepository.getRepositoryUrl();
             String authorizationType = codeRepositoryUpdateReq.getAuthorizationType() != null ? codeRepositoryUpdateReq.getAuthorizationType() : String.valueOf(codeRepository.getAuthorizationType());
             String authorizationInfo = codeRepositoryUpdateReq.getAuthorizationInfo() != null ? codeRepositoryUpdateReq.getAuthorizationInfo() : codeRepository.getAuthorizationInfo();
-            testConnect(repositoryUrl, authorizationType, authorizationInfo);
+            CodeRepositoryUtils.testConnect(repositoryUrl, authorizationType, authorizationInfo);
         }
         // 更新数据
         BeanMapper.copyTo(codeRepositoryUpdateReq, codeRepository);
@@ -126,26 +126,5 @@ public class CodeRepositoryService extends BaseService {
         return codeRepository;
     }
 
-    /**
-     * 测试连接代码仓库地址 (失败抛出异常)
-     *
-     * @param repositoryUrl     代码仓库地址
-     * @param authorizationType 代码仓库授权类型(0：不需要授权；1：用户名密码；)
-     * @param authorizationInfo 代码仓库授权信息
-     */
-    public void testConnect(String repositoryUrl, String authorizationType, String authorizationInfo) {
-        if (Objects.equals(CodeRepository.Authorization_Type_0.toString(), authorizationType)) {
-            // 没有访问限制
-            GitUtils.testConnect(repositoryUrl);
-        } else if (Objects.equals(CodeRepository.Authorization_Type_1.toString(), authorizationType)) {
-            // 需要用户名、密码访问
-            CodeRepository.UserNameAndPassword userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(authorizationInfo, CodeRepository.UserNameAndPassword.class);
-            if (userNameAndPassword == null) {
-                throw new BusinessException("读取授权用户名密码失败");
-            }
-            GitUtils.testConnect(repositoryUrl, userNameAndPassword.getUsername(), userNameAndPassword.getPassword());
-        } else {
-            throw new BusinessException("不支持的代码仓库授权类型");
-        }
-    }
+
 }

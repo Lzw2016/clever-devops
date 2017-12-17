@@ -43,7 +43,6 @@ public class GetGitBranchReq extends BaseRequest {
      * 代码branch或Tag
      */
     @ApiModelProperty("代码branch或Tag")
-    @NotBlank
     @Length(max = 63)
     private String branch;
 }

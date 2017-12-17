@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.clever.common.model.exception.BusinessException;
 import org.clever.common.server.service.BaseService;
 import org.clever.common.utils.mapper.BeanMapper;
-import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.dto.request.ImageConfigAddReq;
 import org.clever.devops.dto.request.ImageConfigQueryReq;
 import org.clever.devops.dto.request.ImageConfigUpdateReq;
@@ -14,7 +13,7 @@ import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
-import org.clever.devops.utils.GitUtils;
+import org.clever.devops.utils.CodeRepositoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,11 +46,7 @@ public class ImageConfigService extends BaseService {
             throw new BusinessException(String.format("代码仓库不存在，RepositoryId=%1$s", imageConfigAddReq.getRepositoryId()));
         }
         // 校验代码仓库“branch或Tag”是否存在
-        ImageConfig.GitBranch gitBranch = getBranch(
-                codeRepository.getRepositoryUrl(),
-                codeRepository.getAuthorizationType().toString(),
-                codeRepository.getAuthorizationInfo(),
-                imageConfigAddReq.getBranch());
+        ImageConfig.GitBranch gitBranch = CodeRepositoryUtils.getBranch(codeRepository, imageConfigAddReq.getBranch());
         if (gitBranch == null) {
             throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigAddReq.getBranch()));
         }
@@ -100,7 +95,13 @@ public class ImageConfigService extends BaseService {
         if (imageConfig == null) {
             throw new BusinessException(String.format("Docker镜像配置不存在，ID=%1$s", id));
         }
-        // 跟新了 Branch ，需要校验
+        // 校验当前 ImageConfig 是否正在构建 -- 当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)
+        if (ImageConfig.buildState_1.equals(imageConfig.getBuildState())
+                || ImageConfig.buildState_2.equals(imageConfig.getBuildState())
+                || ImageConfig.buildState_3.equals(imageConfig.getBuildState())) {
+            throw new BusinessException("当前Docker镜像正在构建中，不能修改");
+        }
+        // 更新了 Branch ，需要校验
         if (imageConfigUpdateReq.getBranch() != null && !Objects.equals(imageConfig.getBranch(), imageConfigUpdateReq.getBranch())) {
             // 获取代码仓库信息
             CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfig.getRepositoryId());
@@ -108,11 +109,7 @@ public class ImageConfigService extends BaseService {
                 throw new BusinessException(String.format("代码仓库不存在，RepositoryId=%1$s", imageConfig.getRepositoryId()));
             }
             // 校验代码仓库“branch或Tag”是否存在
-            ImageConfig.GitBranch gitBranch = getBranch(
-                    codeRepository.getRepositoryUrl(),
-                    codeRepository.getAuthorizationType().toString(),
-                    codeRepository.getAuthorizationInfo(),
-                    imageConfigUpdateReq.getBranch());
+            ImageConfig.GitBranch gitBranch = CodeRepositoryUtils.getBranch(codeRepository, imageConfigUpdateReq.getBranch());
             if (gitBranch == null) {
                 throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigUpdateReq.getBranch()));
             }
@@ -149,33 +146,9 @@ public class ImageConfigService extends BaseService {
         if (imageConfig == null) {
             throw new BusinessException(String.format("Docker镜像配置不存在，ID=%1$s", id));
         }
-        // 校验当前Docker镜像配置是否被依赖
+        // TODO 校验当前Docker镜像配置是否被依赖
 
         // TODO 删除Docker镜像配置
         return imageConfig;
-    }
-
-    /**
-     * 获取“branch或Tag”信息<br/>
-     *
-     * @param repositoryUrl     代码仓库地址
-     * @param authorizationType 代码仓库授权类型(0：不需要授权；1：用户名密码；)
-     * @param authorizationInfo 代码仓库授权信息
-     * @param branch            branch或Tag
-     */
-    public ImageConfig.GitBranch getBranch(String repositoryUrl, String authorizationType, String authorizationInfo, String branch) {
-        if (Objects.equals(CodeRepository.Authorization_Type_0.toString(), authorizationType)) {
-            // 没有访问限制
-            return GitUtils.getBranch(repositoryUrl, branch);
-        } else if (Objects.equals(CodeRepository.Authorization_Type_1.toString(), authorizationType)) {
-            // 需要用户名、密码访问
-            CodeRepository.UserNameAndPassword userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(authorizationInfo, CodeRepository.UserNameAndPassword.class);
-            if (userNameAndPassword == null) {
-                throw new BusinessException("读取授权用户名密码失败");
-            }
-            return GitUtils.getBranch(repositoryUrl, userNameAndPassword.getUsername(), userNameAndPassword.getPassword(), branch);
-        } else {
-            throw new BusinessException("不支持的代码仓库授权类型");
-        }
     }
 }
