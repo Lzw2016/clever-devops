@@ -4,16 +4,17 @@ import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
-import org.clever.devops.dto.request.CodeRepositoryAddReq;
-import org.clever.devops.dto.request.CodeRepositoryQueryReq;
-import org.clever.devops.dto.request.CodeRepositoryUpdateReq;
-import org.clever.devops.dto.request.TestGitConnectReq;
+import org.clever.common.utils.mapper.BeanMapper;
+import org.clever.devops.dto.request.*;
 import org.clever.devops.entity.CodeRepository;
+import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.service.CodeRepositoryService;
 import org.clever.devops.utils.CodeRepositoryUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 作者： lzw<br/>
@@ -61,5 +62,11 @@ public class CodeRepositoryController extends BaseController {
     @PostMapping("/git_connect" + JSON_SUFFIX)
     public void testGitConnect(@RequestBody @Validated TestGitConnectReq testGitConnectReq) {
         CodeRepositoryUtils.testConnect(testGitConnectReq.getRepositoryUrl(), testGitConnectReq.getAuthorizationType(), testGitConnectReq.getAuthorizationInfo());
+    }
+
+    @ApiOperation("获取所有的“branch或Tag”信息")
+    @PostMapping("/git_branch" + JSON_SUFFIX)
+    public List<ImageConfig.GitBranch> getGitBranch(@RequestBody @Validated GetGitBranchReq getGitBranchReq) {
+        return CodeRepositoryUtils.getAllBranch(BeanMapper.mapper(getGitBranchReq, CodeRepository.class));
     }
 }

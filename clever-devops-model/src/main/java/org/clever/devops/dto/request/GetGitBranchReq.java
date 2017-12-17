@@ -38,11 +38,4 @@ public class GetGitBranchReq extends BaseRequest {
      */
     @ApiModelProperty("代码仓库授权信息")
     private String authorizationInfo;
-
-    /**
-     * 代码branch或Tag
-     */
-    @ApiModelProperty("代码branch或Tag")
-    @Length(max = 63)
-    private String branch;
 }
