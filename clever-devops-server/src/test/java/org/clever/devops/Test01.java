@@ -3,7 +3,6 @@ package org.clever.devops;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
@@ -13,7 +12,6 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.swarm.Swarm;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.mapper.JacksonMapper;
-import org.clever.devops.utils.DockerClientUtils;
 import org.clever.devops.websocket.BuildImageProgressMonitor;
 import org.junit.Test;
 
@@ -71,6 +69,33 @@ public class Test01 {
         dockerClient.close();
         System.out.println(stringBuilder.toString());
     }
+
+    @Test
+    public void test03() throws IOException {
+        DockerClient dockerClient = newDockerClient();
+
+        Map<String, String> labels = new HashMap<>();
+        labels.put("labels001","labels-001");
+        labels.put("labels002","labels-002");
+        labels.put("labels003","labels-003");
+
+        Ports ports = new Ports();
+        // ports.bind(new ExposedPort(1314), null); // 随机导出端口
+        // ports.bind(new ExposedPort(1314), Ports.Binding.bindPort(8080)); // 指定端口 随机IP
+        ports.bind(new ExposedPort(1314), Ports.Binding.bindIpAndPort("192.168.159.131",8080)); // 指定IP端口
+        CreateContainerResponse response = dockerClient.createContainerCmd("60815f5cb49d")
+                .withName("admin-demo-1.0.0-SNAPSHOT")
+                .withPortBindings()
+                .withPortBindings(ports)
+                .withPublishAllPorts(true)
+                .withLabels(labels)
+//                .withAliases("TEST001")
+                .exec();
+        dockerClient.startContainerCmd(response.getId()).exec();
+        dockerClient.close();
+
+    }
+
 
     @Test
     public void test02() throws IOException, DockerException, InterruptedException {
