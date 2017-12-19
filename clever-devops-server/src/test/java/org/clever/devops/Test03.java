@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.clever.devops.utils.CodeCompileUtils;
 import org.clever.devops.utils.ConsoleOutput;
 import org.clever.devops.utils.ExecShellUtils;
-import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AnsiWriter;
 import org.jline.utils.AttributedStringBuilder;
 import org.junit.Test;
@@ -116,8 +115,9 @@ public class Test03 {
 
     @Test
     public void test08() throws IOException {
-        TerminalBuilder builder = TerminalBuilder.builder();
-
-//        log.info();
+//        String str = "refs/heads/test";
+        String str = "";
+        str = str.substring(str.lastIndexOf('/') + 1, str.length());
+        log.info(str);
     }
 }

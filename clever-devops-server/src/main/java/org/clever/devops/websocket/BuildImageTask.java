@@ -14,7 +14,7 @@ import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.ImageConfigMapper;
 import org.clever.devops.utils.CodeRepositoryUtils;
 import org.clever.devops.utils.ConsoleOutput;
-import org.clever.devops.utils.DockerClientUtils;
+import org.clever.devops.utils.ImageConfigUtils;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -271,20 +271,7 @@ public class BuildImageTask extends Thread {
         updateImageConfig.setId(imageConfig.getId());
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
         // 构建镜像
-        Map<String, String> args = new HashMap<>();
-        args.put("args1", "value1");
-        args.put("args2", "value2");
-        args.put("args3", "value3");
-        Map<String, String> labels = new HashMap<>();
-        labels.put("labels1", "value1");
-        labels.put("labels2", "value2");
-        labels.put("labels3", "value3");
-        Set<String> tags = new HashSet<>();
-        tags.add("admin-demo:1.0.0-SNAPSHOT");
-        String imageId = DockerClientUtils.buildImage(
-                new BuildImageProgressMonitor(this::sendConsoleLogText),
-                FilenameUtils.concat(imageConfig.getCodeDownloadPath(), imageConfig.getDockerFilePath()),
-                args, labels, tags);
+        String imageId = ImageConfigUtils.buildImage(codeRepository, imageConfig, new BuildImageProgressMonitor(this::sendConsoleLogText));
         // 更新 -- ImageConfig 镜像ID
         updateImageConfig = new ImageConfig();
         updateImageConfig.setId(imageConfig.getId());

@@ -42,30 +42,30 @@ public class CodeRepositoryController extends BaseController {
 
     @ApiOperation("获取代码仓库")
     @GetMapping("/code_repository/{projectName}" + JSON_SUFFIX)
-    public CodeRepository getCodeRepository(@PathVariable("projectName") String projectName) {
+    public CodeRepository getCodeRepository(@PathVariable String projectName) {
         return codeRepositoryService.getCodeRepository(projectName);
     }
 
     @ApiOperation("更新代码仓库")
     @PutMapping("/code_repository/{id}" + JSON_SUFFIX)
-    public CodeRepository updateCodeRepository(@PathVariable("id") Long id, @RequestBody @Validated CodeRepositoryUpdateReq codeRepositoryUpdateReq) {
+    public CodeRepository updateCodeRepository(@PathVariable Long id, @RequestBody @Validated CodeRepositoryUpdateReq codeRepositoryUpdateReq) {
         return codeRepositoryService.updateCodeRepository(id, codeRepositoryUpdateReq);
     }
 
     @ApiOperation("删除代码仓库")
     @DeleteMapping("/code_repository/{projectName}" + JSON_SUFFIX)
-    public CodeRepository delete(@PathVariable("projectName") String projectName) {
+    public CodeRepository delete(@PathVariable String projectName) {
         return codeRepositoryService.delete(projectName);
     }
 
     @ApiOperation("测试连接Git仓库")
-    @PostMapping("/git_connect" + JSON_SUFFIX)
+    @PostMapping("/code_repository/git_connect" + JSON_SUFFIX)
     public void testGitConnect(@RequestBody @Validated TestGitConnectReq testGitConnectReq) {
         CodeRepositoryUtils.testConnect(testGitConnectReq.getRepositoryUrl(), testGitConnectReq.getAuthorizationType(), testGitConnectReq.getAuthorizationInfo());
     }
 
     @ApiOperation("获取所有的“branch或Tag”信息")
-    @PostMapping("/git_branch" + JSON_SUFFIX)
+    @PostMapping("/code_repository/git_branch" + JSON_SUFFIX)
     public List<ImageConfig.GitBranch> getGitBranch(@RequestBody @Validated GetGitBranchReq getGitBranchReq) {
         return CodeRepositoryUtils.getAllBranch(BeanMapper.mapper(getGitBranchReq, CodeRepository.class));
     }

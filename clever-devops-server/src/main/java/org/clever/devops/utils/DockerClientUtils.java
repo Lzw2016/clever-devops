@@ -5,7 +5,7 @@ import com.github.dockerjava.api.command.BuildImageCmd;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -54,8 +54,8 @@ public class DockerClientUtils {
      * @param callback       构建进度监控回调
      * @param dockerfilePath dockerfile文件路径
      * @param args           构建参数
-     * @param labels         构建标签(键值对)
-     * @param tags           构建标签
+     * @param labels         镜像标签(键值对)
+     * @param tags           镜像Tags
      * @return 返回 ImageId
      */
     public static String buildImage(BuildImageResultCallback callback, String dockerfilePath, Map<String, String> args, Map<String, String> labels, Set<String> tags) {
@@ -77,7 +77,48 @@ public class DockerClientUtils {
             if (tags != null) {
                 buildImageCmd.withTags(tags);
             }
+//            buildImageCmd.withCpusetcpus("");
+//            buildImageCmd.withCpushares("");
+//            buildImageCmd.withMemory(0L);
+//            buildImageCmd.withMemswap(0L);
+//            buildImageCmd.withCacheFrom(new HashSet<>());
+//            buildImageCmd.withBuildAuthConfigs(null);
+//            buildImageCmd.withForcerm(false);
+//            buildImageCmd.withNoCache(false);
+//            buildImageCmd.withPull(false);
+//            buildImageCmd.withQuiet(false);
+//            buildImageCmd.withRemove(false);
+//            buildImageCmd.withShmsize(0L);
             return buildImageCmd.exec(callback).awaitImageId();
+        } catch (Throwable e) {
+            throw new BusinessException("构建Docker镜像失败", e);
+        }
+    }
+
+    /**
+     * 新建一个 Docker 容器
+     *
+     * @param image  镜像名称或镜像ID
+     * @param name   容器名称
+     * @param ports  设置绑定的端口IP
+     * @param labels 容器标签
+     * @return 容器信息
+     */
+    public static CreateContainerResponse createContainer(String image, String name, Ports ports, Map<String, String> labels) {
+        try (DockerClient dockerClient = newDockerClient()) {
+            CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image);
+            if (name != null) {
+                createContainerCmd.withName(name);
+            }
+            if (ports != null) {
+                createContainerCmd.withPortBindings(ports);
+                createContainerCmd.withPublishAllPorts(true);
+            }
+            if (labels != null) {
+                createContainerCmd.withLabels(labels);
+            }
+//            createContainerCmd.withNetworkMode("ingress");
+            return createContainerCmd.exec();
         } catch (Throwable e) {
             throw new BusinessException("构建Docker镜像失败", e);
         }
@@ -94,24 +135,5 @@ public class DockerClientUtils {
             throw new BusinessException("构建Docker镜像失败", e);
         }
         return result;
-    }
-
-    public static CreateContainerResponse createContainer(String image, String name, List<PortBinding> portBindings, Map<String, String> labels) {
-        try (DockerClient dockerClient = newDockerClient()) {
-            CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image);
-//            createContainerCmd.withNetworkMode("ingress");
-            if (name != null) {
-                createContainerCmd.withName(name);
-            }
-            if (portBindings != null) {
-                createContainerCmd.withPortBindings(portBindings);
-            }
-            if (labels != null) {
-                createContainerCmd.withLabels(labels);
-            }
-            return createContainerCmd.exec();
-        } catch (Throwable e) {
-            throw new BusinessException("构建Docker镜像失败", e);
-        }
     }
 }

@@ -1,5 +1,6 @@
 package org.clever.devops.controller;
 
+import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.pagehelper.PageInfo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -39,19 +40,25 @@ public class ImageConfigController extends BaseController {
 
     @ApiOperation("获取Docker镜像配置")
     @GetMapping("/image_config/{serverUrl}" + JSON_SUFFIX)
-    public ImageConfig getImageConfig(@PathVariable("serverUrl") String serverUrl) {
+    public ImageConfig getImageConfig(@PathVariable String serverUrl) {
         return imageConfigService.getImageConfig(serverUrl);
     }
 
     @ApiOperation("更新Docker镜像配置")
     @PutMapping("/image_config/{id}" + JSON_SUFFIX)
-    public ImageConfig updateImageConfig(@PathVariable("id") Long id, @RequestBody @Validated ImageConfigUpdateReq imageConfigUpdateReq) {
+    public ImageConfig updateImageConfig(@PathVariable Long id, @RequestBody @Validated ImageConfigUpdateReq imageConfigUpdateReq) {
         return imageConfigService.updateImageConfig(id, imageConfigUpdateReq);
     }
 
     @ApiOperation("删除Docker镜像配置")
     @DeleteMapping("/image_config/{id}" + JSON_SUFFIX)
-    public ImageConfig delete(@PathVariable("id") Long id) {
+    public ImageConfig delete(@PathVariable Long id) {
         return imageConfigService.delete(id);
+    }
+
+    @ApiOperation("根据ImageConfig新增Docker容器")
+    @PostMapping("/image_config/container/{id}" + JSON_SUFFIX)
+    public CreateContainerResponse createContainer(@PathVariable Long id) {
+        return imageConfigService.createContainer(id);
     }
 }
