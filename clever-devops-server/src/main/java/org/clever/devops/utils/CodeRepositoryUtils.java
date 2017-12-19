@@ -78,7 +78,7 @@ public class CodeRepositoryUtils {
                 // GIT 仓库
                 GitProgressMonitor gitProgressMonitor = new GitProgressMonitor(progressMonitorToWebSocket);
                 if (userNameAndPassword != null) {
-                    GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword(), gitProgressMonitor);
+                    GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), gitProgressMonitor, userNameAndPassword.getUsername(), userNameAndPassword.getPassword());
                 } else {
                     GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), gitProgressMonitor);
                 }
@@ -140,18 +140,18 @@ public class CodeRepositoryUtils {
      * @param branch         branch或Tag
      */
     public static ImageConfig.GitBranch getBranch(CodeRepository codeRepository, String branch) {
-        return getBranch(codeRepository.getRepositoryUrl(), codeRepository.getAuthorizationType().toString(), codeRepository.getAuthorizationInfo(), branch);
+        return getBranch(codeRepository.getRepositoryUrl(), branch, codeRepository.getAuthorizationType().toString(), codeRepository.getAuthorizationInfo());
     }
 
     /**
      * 获取“branch或Tag”信息<br/>
      *
      * @param repositoryUrl     代码仓库地址
+     * @param branch            branch或Tag
      * @param authorizationType 代码仓库授权类型(0：不需要授权；1：用户名密码；)
      * @param authorizationInfo 代码仓库授权信息
-     * @param branch            branch或Tag
      */
-    public static ImageConfig.GitBranch getBranch(String repositoryUrl, String authorizationType, String authorizationInfo, String branch) {
+    public static ImageConfig.GitBranch getBranch(String repositoryUrl, String branch, String authorizationType, String authorizationInfo) {
         if (Objects.equals(CodeRepository.Authorization_Type_0.toString(), authorizationType)) {
             // 没有访问限制
             return GitUtils.getBranch(repositoryUrl, branch);
