@@ -65,6 +65,7 @@ public class ImageConfigUtils {
      * @return 返回 ImageId
      */
     public static String buildImage(CodeRepository codeRepository, ImageConfig imageConfig, BuildImageResultCallback callback) {
+        // TODO 删除之前的镜像 ??
         // 构建镜像
         Map<String, String> labels = new HashMap<>();
         labels.put(IMAGE_LABEL_PROJECT_NAME, codeRepository.getProjectName());
