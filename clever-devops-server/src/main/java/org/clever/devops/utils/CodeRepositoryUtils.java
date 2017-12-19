@@ -22,6 +22,7 @@ import java.util.Objects;
  * 作者： lzw<br/>
  * 创建时间：2017-12-17 14:38 <br/>
  */
+@SuppressWarnings("Duplicates")
 @Slf4j
 public class CodeRepositoryUtils {
 
@@ -60,19 +61,33 @@ public class CodeRepositoryUtils {
      * @param progressMonitorToWebSocket 下载进度回调监控
      */
     public static void downloadCode(CodeRepository codeRepository, ImageConfig imageConfig, ProgressMonitorToWebSocket progressMonitorToWebSocket) {
-        GitProgressMonitor gitProgressMonitor = new GitProgressMonitor(progressMonitorToWebSocket);
-        if (Objects.equals(CodeRepository.Authorization_Type_0, codeRepository.getAuthorizationType())) {
-            // 不需要授权
-            GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), gitProgressMonitor);
-        } else if (Objects.equals(CodeRepository.Authorization_Type_1, codeRepository.getAuthorizationType())) {
+        // 获取授权信息
+        CodeRepository.UserNameAndPassword userNameAndPassword = null;
+        if (Objects.equals(CodeRepository.Authorization_Type_1, codeRepository.getAuthorizationType())) {
             // 用户名密码
-            CodeRepository.UserNameAndPassword userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(codeRepository.getAuthorizationInfo(), CodeRepository.UserNameAndPassword.class);
+            userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(codeRepository.getAuthorizationInfo(), CodeRepository.UserNameAndPassword.class);
             if (userNameAndPassword == null) {
                 throw new BusinessException("读取授权用户名密码失败");
             }
-            GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword(), gitProgressMonitor);
-        } else {
+        } else if (!Objects.equals(CodeRepository.Authorization_Type_0, codeRepository.getAuthorizationType())) {
             throw new BusinessException("不支持的代码仓库授权类型");
+        }
+        // 下载代码
+        switch (codeRepository.getRepositoryType()) {
+            case CodeRepository.Repository_Type_Git:
+                // GIT 仓库
+                GitProgressMonitor gitProgressMonitor = new GitProgressMonitor(progressMonitorToWebSocket);
+                if (userNameAndPassword != null) {
+                    GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword(), gitProgressMonitor);
+                } else {
+                    GitUtils.downloadCode(imageConfig.getCodeDownloadPath(), codeRepository.getRepositoryUrl(), imageConfig.getCommitId(), gitProgressMonitor);
+                }
+                break;
+            case CodeRepository.Repository_Type_Svn:
+                // SVN 仓库
+                throw new BusinessException("暂不支持SVN代码仓库");
+            default:
+                throw new BusinessException("不支持的代码仓库类型");
         }
     }
 
@@ -158,7 +173,33 @@ public class CodeRepositoryUtils {
      * @param codeRepository 代码仓库信息
      */
     public static void testConnect(CodeRepository codeRepository) {
-        GitUtils.testConnect(codeRepository.getRepositoryUrl(), codeRepository.getAuthorizationType().toString(), codeRepository.getAuthorizationInfo());
+        // 获取授权信息
+        CodeRepository.UserNameAndPassword userNameAndPassword = null;
+        if (Objects.equals(CodeRepository.Authorization_Type_1, codeRepository.getAuthorizationType())) {
+            // 用户名密码
+            userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(codeRepository.getAuthorizationInfo(), CodeRepository.UserNameAndPassword.class);
+            if (userNameAndPassword == null) {
+                throw new BusinessException("读取授权用户名密码失败");
+            }
+        } else if (!Objects.equals(CodeRepository.Authorization_Type_0, codeRepository.getAuthorizationType())) {
+            throw new BusinessException("不支持的代码仓库授权类型");
+        }
+        // 测试连接代码仓库地址
+        switch (codeRepository.getRepositoryType()) {
+            case CodeRepository.Repository_Type_Git:
+                // GIT 仓库
+                if (userNameAndPassword != null) {
+                    GitUtils.testConnect(codeRepository.getRepositoryUrl(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword());
+                } else {
+                    GitUtils.testConnect(codeRepository.getRepositoryUrl());
+                }
+                break;
+            case CodeRepository.Repository_Type_Svn:
+                // SVN 仓库
+                throw new BusinessException("暂不支持SVN代码仓库");
+            default:
+                throw new BusinessException("不支持的代码仓库类型");
+        }
     }
 
     /**
