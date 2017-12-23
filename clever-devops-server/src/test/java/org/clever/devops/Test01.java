@@ -124,7 +124,7 @@ public class Test01 {
 //    public void test03() {
 //        List<PortBinding> portBindings = new ArrayList<>();
 //        portBindings.add(new PortBinding(Ports.Binding.bindPortRange(10000, 99999), ExposedPort.tcp(1314)));
-//        CreateContainerResponse response = DockerClientUtils.createContainer("60815f5cb49d", "admin-demo:1.0.0-SNAPSHOT", portBindings, null);
+//        CreateContainerResponse response = DockerClientService.createContainer("60815f5cb49d", "admin-demo:1.0.0-SNAPSHOT", portBindings, null);
 //        log.info(response.toString());
 //    }
 }

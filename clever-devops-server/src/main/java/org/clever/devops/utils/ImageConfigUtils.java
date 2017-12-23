@@ -1,16 +1,22 @@
 package org.clever.devops.utils;
 
+import com.github.dockerjava.api.command.BuildImageCmd;
+import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.clever.common.model.exception.BusinessException;
 import org.clever.common.utils.DateTimeUtils;
+import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 
+import java.io.File;
 import java.util.*;
 
 /**
@@ -56,6 +62,8 @@ public class ImageConfigUtils {
      */
     private static final String IMAGE_LABEL_SERVER_URL = "ServerUrl";
 
+    private static final DockerClientUtils dockerClientUtils = SpringContextHolder.getBean(DockerClientUtils.class);
+
     /**
      * 构建 Docker 镜像
      *
@@ -65,8 +73,7 @@ public class ImageConfigUtils {
      * @return 返回 ImageId
      */
     public static String buildImage(CodeRepository codeRepository, ImageConfig imageConfig, BuildImageResultCallback callback) {
-        // TODO 删除之前的镜像 ??
-        // 构建镜像
+        // 构建镜像 - 整理参数
         Map<String, String> labels = new HashMap<>();
         labels.put(IMAGE_LABEL_PROJECT_NAME, codeRepository.getProjectName());
         labels.put(IMAGE_LABEL_LANGUAGE, codeRepository.getLanguage());
@@ -81,7 +88,25 @@ public class ImageConfigUtils {
         Set<String> tags = new HashSet<>();
         tags.add(String.format("%1$s:%2$s", codeRepository.getProjectName(), branch));
         String dockerfilePath = FilenameUtils.concat(imageConfig.getCodeDownloadPath(), imageConfig.getDockerFilePath());
-        return DockerClientUtils.buildImage(callback, dockerfilePath, null, labels, tags);
+        File dockerfile = new File(dockerfilePath);
+        if (!dockerfile.exists() || !dockerfile.isFile()) {
+            throw new BusinessException(String.format("Dockerfile文件[%1$s]不存在", dockerfilePath));
+        }
+        return dockerClientUtils.execute(client -> {
+            // 删除之前的镜像
+            if (StringUtils.isNotBlank(imageConfig.getImageId())) {
+                List<Image> imageList = client.listImagesCmd().withImageNameFilter(imageConfig.getImageId()).exec();
+                for (Image image : imageList) {
+                    client.removeImageCmd(image.getId()).exec();
+                }
+            }
+            // 构建镜像
+            BuildImageCmd buildImageCmd = client.buildImageCmd();
+            buildImageCmd.withDockerfile(dockerfile);
+            buildImageCmd.withLabels(labels);
+            buildImageCmd.withTags(tags);
+            return buildImageCmd.exec(callback).awaitImageId();
+        });
     }
 
     /**
@@ -90,17 +115,22 @@ public class ImageConfigUtils {
      * @param imageConfig Docker镜像配置
      * @return 返回 ImageId
      */
-    public static CreateContainerResponse createContainer(ImageConfig imageConfig) {
+    public static CreateContainerResponse createContainer(final ImageConfig imageConfig) {
         String image = imageConfig.getImageId();
         String name = String.format("%1$s-%2$s", imageConfig.getServerUrl(), DateTimeUtils.formatToString(new Date(), "yyyyMMddHHmmss"));
-        Ports ports = null;
-        if (StringUtils.isNotBlank(imageConfig.getServerPorts())) {
-            ports = new Ports();
-            String[] portArray = imageConfig.getServerPorts().split(",");
-            for (String port : portArray) {
-                ports.bind(new ExposedPort(NumberUtils.toInt(port)), null);
+        return dockerClientUtils.execute(client -> {
+            CreateContainerCmd createContainerCmd = client.createContainerCmd(image);
+            createContainerCmd.withName(name);
+            if (StringUtils.isNotBlank(imageConfig.getServerPorts())) {
+                Ports ports = new Ports();
+                String[] portArray = imageConfig.getServerPorts().split(",");
+                for (String port : portArray) {
+                    ports.bind(new ExposedPort(NumberUtils.toInt(port)), null);
+                }
+                createContainerCmd.withPortBindings(ports);
+                createContainerCmd.withPublishAllPorts(true);
             }
-        }
-        return DockerClientUtils.createContainer(image, name, ports, null);
+            return createContainerCmd.exec();
+        });
     }
 }

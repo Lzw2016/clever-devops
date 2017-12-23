@@ -4,12 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.clever.devops.utils.CodeCompileUtils;
 import org.clever.devops.utils.ConsoleOutput;
 import org.clever.devops.utils.ExecShellUtils;
-import org.jline.utils.AnsiWriter;
-import org.jline.utils.AttributedStringBuilder;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.StringWriter;
 
 /**
  * 作者： lzw<br/>
@@ -77,41 +74,41 @@ public class Test03 {
 //        System.out.println(s1);
     }
 
-    @Test
-    public void test06() throws IOException {
-//        AnsiConsole.systemInstall();
-//        String str = "1234567890\b\b\n123\n456\r\033[k\n789\033[1Daa\n\033[31m红色字\033[0m";
-        String str = "1234567890\b\b\n123\n456\r\033[K\n789\033[1Daa";
-        System.out.println("1111111111111\r\033[k");
-        System.out.println();
-        StringWriter stringWriter = new StringWriter();
-        AnsiWriter out = new AnsiWriter(stringWriter);
-
-        try {
-            out.write(str.toCharArray(), 0, str.length());
-            out.flush();
-            out.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        String s1 = stringWriter.getBuffer().toString();
-        System.out.println(s1);
-//        AnsiConsole.systemUninstall();
-    }
-
-    @Test
-    public void test07() throws IOException {
-        AttributedStringBuilder sb = new AttributedStringBuilder();
-        sb.ansiAppend("1234567890\b\b\n");
-
-        String str = sb.toString();
-        System.out.println(str);
-        str = sb.toAnsi();
-        System.out.println(str);
-        str = sb.toAttributedString().toString();
-        System.out.println(str);
-
-    }
+//    @Test
+//    public void test06() throws IOException {
+////        AnsiConsole.systemInstall();
+////        String str = "1234567890\b\b\n123\n456\r\033[k\n789\033[1Daa\n\033[31m红色字\033[0m";
+//        String str = "1234567890\b\b\n123\n456\r\033[K\n789\033[1Daa";
+//        System.out.println("1111111111111\r\033[k");
+//        System.out.println();
+//        StringWriter stringWriter = new StringWriter();
+//        AnsiWriter out = new AnsiWriter(stringWriter);
+//
+//        try {
+//            out.write(str.toCharArray(), 0, str.length());
+//            out.flush();
+//            out.close();
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//        String s1 = stringWriter.getBuffer().toString();
+//        System.out.println(s1);
+////        AnsiConsole.systemUninstall();
+//    }
+//
+//    @Test
+//    public void test07() throws IOException {
+//        AttributedStringBuilder sb = new AttributedStringBuilder();
+//        sb.ansiAppend("1234567890\b\b\n");
+//
+//        String str = sb.toString();
+//        System.out.println(str);
+//        str = sb.toAnsi();
+//        System.out.println(str);
+//        str = sb.toAttributedString().toString();
+//        System.out.println(str);
+//
+//    }
 
     @Test
     public void test08() throws IOException {

@@ -1,139 +1,89 @@
 package org.clever.devops.utils;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.Ports;
-import com.github.dockerjava.core.DefaultDockerClientConfig;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
-import com.github.dockerjava.core.command.BuildImageResultCallback;
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.clever.common.model.exception.BusinessException;
-import org.clever.common.utils.spring.SpringContextHolder;
-import org.clever.devops.config.GlobalConfig;
+import org.clever.devops.utils.pool.DockerClientPool;
+import org.clever.devops.utils.pool.PooledDockerClientFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import javax.annotation.PostConstruct;
 
 /**
- * Docker 操作工具类
+ * DockerClient 使用工具 - 执行各种Docker操作
  * <p>
  * 作者： lzw<br/>
- * 创建时间：2017-12-16 0:57 <br/>
+ * 创建时间：2017-12-22 11:47 <br/>
  */
+@Component
+@Slf4j
 public class DockerClientUtils {
 
-    private static final GlobalConfig GLOBAL_CONFIG = SpringContextHolder.getBean(GlobalConfig.class);
+    private DockerClientPool pool;
 
-    private static final DockerClientConfig DOCKER_CLIENT_CONFIG;
-
-    static {
-        DefaultDockerClientConfig.Builder builder = DefaultDockerClientConfig.createDefaultConfigBuilder();
-        builder.withDockerHost(GLOBAL_CONFIG.getDockerHost());
-        if (StringUtils.isNotBlank(GLOBAL_CONFIG.getDockerVersion())) {
-            builder.withApiVersion(GLOBAL_CONFIG.getDockerVersion());
-        }
-        DOCKER_CLIENT_CONFIG = builder.build();
-    }
+    @Autowired
+    private PooledDockerClientFactory dockerClientFactory;
 
     /**
-     * 新建一个DockerClient 使用完毕一定要调用close()方法关闭连接
+     * 初始化连接池
      */
-    private static DockerClient newDockerClient() {
-        return DockerClientBuilder.getInstance(DOCKER_CLIENT_CONFIG).build();
+    @PostConstruct
+    private void init() {
+        // 连接池配置
+        GenericObjectPoolConfig conf = new GenericObjectPoolConfig();
+        // 对象池中管理的最多对象个数
+        conf.setMaxTotal(8);
+        // 对象池中最大的空闲对象个数
+        conf.setMaxIdle(8);
+        // 对象池中最小的空闲对象个数
+        conf.setMinIdle(1);
+        pool = new DockerClientPool(dockerClientFactory, conf);
     }
 
     /**
-     * 构建 Docker 镜像
+     * 获取连接池信息
+     */
+    public void dumpPoolInfo() {
+        if (log.isDebugEnabled()) {
+            String tmp = "\r\n" +
+                    "#=======================================================================================================================#\r\n" +
+                    "# ------Dump Pool Info------\r\n" +
+                    "#\t 活动连接：" + pool.getNumActive() + "\r\n" +
+                    "#\t 空闲连接：" + pool.getNumIdle() + "\r\n" +
+                    "#\t 正在使用的连接：" + pool.getNumWaiters() + "\r\n" +
+                    "#\t 连接获取总数统计：" + pool.getBorrowedCount() + "\r\n" +
+                    "#\t 连接返回总数统计：" + pool.getReturnedCount() + "\r\n" +
+                    "#\t 连接创建总数统计：" + pool.getCreatedCount() + "\r\n" +
+                    "#\t 连接销毁总数统计：" + pool.getDestroyedCount() + "\r\n" +
+                    "#\t 连接销毁(因为连接不可用)总数统计：" + pool.getDestroyedByBorrowValidationCount() + "\r\n" +
+                    "#\t 连接销毁(因为连接被回收)总数统计：" + pool.getDestroyedByEvictorCount() + "\r\n" +
+                    "#=======================================================================================================================#\r\n";
+            log.debug(tmp);
+        }
+    }
+
+    /**
+     * 执行 Docker 操作
      *
-     * @param callback       构建进度监控回调
-     * @param dockerfilePath dockerfile文件路径
-     * @param args           构建参数
-     * @param labels         镜像标签(键值对)
-     * @param tags           镜像Tags
-     * @return 返回 ImageId
+     * @param executor 执行回调接口
      */
-    public static String buildImage(BuildImageResultCallback callback, String dockerfilePath, Map<String, String> args, Map<String, String> labels, Set<String> tags) {
-        File dockerfile = new File(dockerfilePath);
-        if (!dockerfile.exists() || !dockerfile.isFile()) {
-            throw new BusinessException(String.format("Dockerfile文件[%1$s]不存在", dockerfilePath));
+    public <T> T execute(DockerClientExecutor<T> executor) {
+        if (executor == null) {
+            return null;
         }
-        try (DockerClient dockerClient = newDockerClient()) {
-            BuildImageCmd buildImageCmd = dockerClient.buildImageCmd();
-            buildImageCmd.withDockerfile(dockerfile);
-            if (args != null) {
-                for (Map.Entry<String, String> arg : args.entrySet()) {
-                    buildImageCmd.withBuildArg(arg.getKey(), arg.getValue());
-                }
-            }
-            if (labels != null) {
-                buildImageCmd.withLabels(labels);
-            }
-            if (tags != null) {
-                buildImageCmd.withTags(tags);
-            }
-//            buildImageCmd.withCpusetcpus("");
-//            buildImageCmd.withCpushares("");
-//            buildImageCmd.withMemory(0L);
-//            buildImageCmd.withMemswap(0L);
-//            buildImageCmd.withCacheFrom(new HashSet<>());
-//            buildImageCmd.withBuildAuthConfigs(null);
-//            buildImageCmd.withForcerm(false);
-//            buildImageCmd.withNoCache(false);
-//            buildImageCmd.withPull(false);
-//            buildImageCmd.withQuiet(false);
-//            buildImageCmd.withRemove(false);
-//            buildImageCmd.withShmsize(0L);
-            return buildImageCmd.exec(callback).awaitImageId();
+        DockerClient client = null;
+        try {
+            client = pool.borrowObject();
+            return executor.execute(client);
         } catch (Throwable e) {
-            throw new BusinessException("构建Docker镜像失败", e);
-        }
-    }
-
-    /**
-     * 新建一个 Docker 容器
-     *
-     * @param image  镜像名称或镜像ID
-     * @param name   容器名称
-     * @param ports  设置绑定的端口IP
-     * @param labels 容器标签
-     * @return 容器信息
-     */
-    public static CreateContainerResponse createContainer(String image, String name, Ports ports, Map<String, String> labels) {
-        try (DockerClient dockerClient = newDockerClient()) {
-            CreateContainerCmd createContainerCmd = dockerClient.createContainerCmd(image);
-            if (name != null) {
-                createContainerCmd.withName(name);
+            log.warn("执行Docker操作失败", e);
+            throw new BusinessException("执行Docker操作失败", e);
+        } finally {
+            if (client != null) {
+                pool.returnObject(client);
             }
-            if (ports != null) {
-                createContainerCmd.withPortBindings(ports);
-                createContainerCmd.withPublishAllPorts(true);
-            }
-            if (labels != null) {
-                createContainerCmd.withLabels(labels);
-            }
-//            createContainerCmd.withNetworkMode("ingress");
-            return createContainerCmd.exec();
-        } catch (Throwable e) {
-            throw new BusinessException("构建Docker镜像失败", e);
         }
-    }
-
-    /**
-     * 读取Docker的所有容器
-     */
-    public static List<Container> listContainers() {
-        List<Container> result;
-        try (DockerClient dockerClient = newDockerClient()) {
-            result = dockerClient.listContainersCmd().exec();
-        } catch (Throwable e) {
-            throw new BusinessException("构建Docker镜像失败", e);
-        }
-        return result;
     }
 }

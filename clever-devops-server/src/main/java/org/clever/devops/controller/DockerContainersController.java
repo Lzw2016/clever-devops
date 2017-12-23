@@ -5,6 +5,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
 import org.clever.devops.utils.DockerClientUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,9 +21,12 @@ import java.util.List;
 @RestController
 public class DockerContainersController extends BaseController {
 
+    @Autowired
+    private DockerClientUtils dockerClientUtils;
+
     @ApiOperation("查询Docker Containers")
     @GetMapping("/docker/container" + JSON_SUFFIX)
     public List<Container> listContainers() {
-        return DockerClientUtils.listContainers();
+        return dockerClientUtils.execute(client -> client.listContainersCmd().exec());
     }
 }
