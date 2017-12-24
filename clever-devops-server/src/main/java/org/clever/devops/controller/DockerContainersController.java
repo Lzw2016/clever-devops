@@ -116,7 +116,5 @@ public class DockerContainersController extends BaseController {
 //        });
 //    }
 
-    // 容器日志 /containers/{id}/logs
-
-    // 监控统计数据 /containers/{id}/stats
+    // TODO 监控统计数据 /containers/{id}/stats
 }

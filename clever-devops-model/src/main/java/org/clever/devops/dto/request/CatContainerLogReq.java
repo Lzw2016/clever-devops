@@ -24,4 +24,12 @@ public class CatContainerLogReq extends BaseRequest {
     @ApiModelProperty("Docker容器ID")
     @NotBlank
     private String containerId;
+
+    // TODO 设置参数
+    private Boolean timestamps;
+    private Boolean followStream;
+    private Boolean stdout;
+    private Boolean stderr;
+    private Integer since;
+    private Integer tail;
 }
