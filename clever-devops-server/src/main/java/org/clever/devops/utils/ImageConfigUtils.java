@@ -97,7 +97,7 @@ public class ImageConfigUtils {
             if (StringUtils.isNotBlank(imageConfig.getImageId())) {
                 List<Image> imageList = client.listImagesCmd().withImageNameFilter(imageConfig.getImageId()).exec();
                 for (Image image : imageList) {
-                    client.removeImageCmd(image.getId()).exec();
+                    client.removeImageCmd(image.getId()).withForce(true).withNoPrune(true).exec();
                 }
             }
             // 构建镜像
