@@ -151,8 +151,20 @@ public class ContainerLogTask extends Thread {
         while (true) {
             try {
                 Thread.sleep(1000);
+                // 移除关闭了的Session
+                Set<WebSocketSession> rmSet = new HashSet<>();
+                for (WebSocketSession session : sessionSet) {
+                    if (!session.isOpen()) {
+                        rmSet.add(session);
+                    }
+                }
+                sessionSet.removeAll(rmSet);
+                // 已经没有连接查看日志了 中断任务
+                if (sessionSet.size() <= 0) {
+                    this.interrupt();
+                }
             } catch (InterruptedException e) {
-                log.info("中断停止查看日志", e);
+                log.info("中断停止查看日志");
                 try {
                     destroyTask();
                 } catch (IOException e1) {
@@ -207,10 +219,6 @@ public class ContainerLogTask extends Thread {
      * @param catContainerLogRes 消息对象
      */
     private void sendMessage(CatContainerLogRes catContainerLogRes) {
-        if (sessionSet.size() <= 0) {
-            // 已经没有连接查看日志了 中断任务
-            this.interrupt();
-        }
         Set<WebSocketSession> rmSet = new HashSet<>();
         for (WebSocketSession session : sessionSet) {
             if (!session.isOpen()) {
