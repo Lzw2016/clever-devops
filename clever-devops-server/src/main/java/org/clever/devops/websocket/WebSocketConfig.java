@@ -15,14 +15,14 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 @Slf4j
 public class WebSocketConfig implements WebSocketConfigurer {
-
     private final BuildImageHandler buildImageHandler;
-
+    private final ContainerLogHandler containerLogHandler;
     private final WebSocketHandshakeInterceptor webSocketHandshakeInterceptor;
 
     @Autowired
-    public WebSocketConfig(BuildImageHandler buildImageHandler, WebSocketHandshakeInterceptor webSocketHandshakeInterceptor) {
+    public WebSocketConfig(BuildImageHandler buildImageHandler, ContainerLogHandler containerLogHandler, WebSocketHandshakeInterceptor webSocketHandshakeInterceptor) {
         this.buildImageHandler = buildImageHandler;
+        this.containerLogHandler = containerLogHandler;
         this.webSocketHandshakeInterceptor = webSocketHandshakeInterceptor;
     }
 
@@ -31,6 +31,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
         String[] allowsOrigins = {"*"};
         //WebSocket通道 withSockJS()表示开启 SockJs, SockJS 所处理的 URL 是 “http://“ 或 “https://“ 模式，而不是 “ws://“ or “wss://“
         registry.addHandler(buildImageHandler, "/build_image")
+                .addHandler(containerLogHandler, "/server_log")
                 .addInterceptors(webSocketHandshakeInterceptor)
                 .setAllowedOrigins(allowsOrigins);
         // .withSockJS();

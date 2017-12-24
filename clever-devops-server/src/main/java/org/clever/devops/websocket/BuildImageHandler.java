@@ -43,6 +43,7 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
     static {
         // 守护线程
         Thread thread = new Thread(() -> {
+            //noinspection InfiniteLoopStatement
             while (true) {
                 List<Long> rmList = new ArrayList<>();
                 for (ConcurrentHashMap.Entry<Long, BuildImageTask> entry : BUILD_IMAGE_TASK_MAP.entrySet()) {
@@ -161,6 +162,7 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
      */
     private void sendErrorMessage(WebSocketSession session, String errorMessage) {
         BuildImageRes buildImageRes = new BuildImageRes();
+        buildImageRes.setLogText(errorMessage);
         buildImageRes.setComplete(true);
         TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(buildImageRes));
         try {

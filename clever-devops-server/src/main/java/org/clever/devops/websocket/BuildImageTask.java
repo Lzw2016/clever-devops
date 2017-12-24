@@ -40,13 +40,11 @@ public class BuildImageTask extends Thread {
     private GlobalConfig globalConfig;
     @Autowired
     private ImageConfigMapper imageConfigMapper;
-    //    @Autowired
-//    private CodeRepositoryMapper codeRepositoryMapper;
 
     /**
      * 连接当前任务的Session集合
      */
-    private ConcurrentSet<WebSocketSession> outSessionSet = new ConcurrentSet<>();
+    private ConcurrentSet<WebSocketSession> sessionSet = new ConcurrentSet<>();
 
     /**
      * 记录所有输出日志
@@ -89,7 +87,7 @@ public class BuildImageTask extends Thread {
      * @param imageConfig    当前操作的“Docker镜像配置”
      */
     private void init(WebSocketSession session, CodeRepository codeRepository, ImageConfig imageConfig) {
-        outSessionSet.add(session);
+        sessionSet.add(session);
         this.codeRepository = codeRepository;
         this.imageConfig = imageConfig;
         // 构建响应数据
@@ -106,7 +104,7 @@ public class BuildImageTask extends Thread {
         tmp.setLogText(allLogText.toString());
         tmp.setComplete(false);
         sendMessage(session, tmp);
-        outSessionSet.add(session);
+        sessionSet.add(session);
     }
 
     /**
@@ -115,15 +113,15 @@ public class BuildImageTask extends Thread {
      * @param sessionId SessionID
      */
     public boolean removeWebSocketSession(String sessionId) {
-        WebSocketSession rm = outSessionSet.stream().filter(session -> Objects.equals(session.getId(), sessionId)).findFirst().orElse(null);
-        return rm != null && outSessionSet.remove(rm);
+        WebSocketSession rm = sessionSet.stream().filter(session -> Objects.equals(session.getId(), sessionId)).findFirst().orElse(null);
+        return rm != null && sessionSet.remove(rm);
     }
 
     /**
      * 返回连接当前任务的Session数量
      */
     public int getWebSocketSessionSize() {
-        return outSessionSet == null ? 0 : outSessionSet.size();
+        return sessionSet == null ? 0 : sessionSet.size();
     }
 
     /**
@@ -353,7 +351,7 @@ public class BuildImageTask extends Thread {
         // 发送消息
         sendMessage(buildImageRes);
         // 关闭所有连接
-        for (WebSocketSession session : outSessionSet) {
+        for (WebSocketSession session : sessionSet) {
             WebSocketCloseSessionUtils.closeSession(session);
         }
     }
@@ -365,7 +363,7 @@ public class BuildImageTask extends Thread {
      */
     private void sendMessage(BuildImageRes buildImageRes) {
         Set<WebSocketSession> rmSet = new HashSet<>();
-        for (WebSocketSession session : outSessionSet) {
+        for (WebSocketSession session : sessionSet) {
             if (!session.isOpen()) {
                 rmSet.add(session);
                 continue;
@@ -373,7 +371,7 @@ public class BuildImageTask extends Thread {
             sendMessage(session, buildImageRes);
         }
         // 移除关闭了的Session
-        outSessionSet.removeAll(rmSet);
+        sessionSet.removeAll(rmSet);
     }
 
     /**
