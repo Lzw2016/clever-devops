@@ -110,7 +110,7 @@ public class ContainerLogTask extends Thread {
         resultCallback = dockerClientUtils.execute(client -> {
             LogContainerCmd cmd = client.logContainerCmd(catContainerLogReq.getContainerId());
             cmd.withTimestamps(false);
-            cmd.withFollowStream(false);
+            cmd.withFollowStream(true);
             cmd.withStdErr(true);
             cmd.withStdOut(true);
             // cmd.withSince(0);
@@ -131,7 +131,7 @@ public class ContainerLogTask extends Thread {
 
                 @Override
                 public void onError(Throwable throwable) {
-                    log.error("查看日志出现异常", throwable);
+                    log.warn("查看日志出现异常", throwable);
                     sendCompleteMessage("\n查看日志出现异常\n" + ExceptionUtils.getStackTraceAsString(throwable));
                 }
 
@@ -148,6 +148,19 @@ public class ContainerLogTask extends Thread {
                 }
             });
         });
+        while (true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.info("中断停止查看日志", e);
+                try {
+                    destroyTask();
+                } catch (IOException e1) {
+                    log.info("释放ContainerLogTask任务失败", e);
+                }
+                return;
+            }
+        }
     }
 
     /**
@@ -194,6 +207,10 @@ public class ContainerLogTask extends Thread {
      * @param catContainerLogRes 消息对象
      */
     private void sendMessage(CatContainerLogRes catContainerLogRes) {
+        if (sessionSet.size() <= 0) {
+            // 已经没有连接查看日志了 中断任务
+            this.interrupt();
+        }
         Set<WebSocketSession> rmSet = new HashSet<>();
         for (WebSocketSession session : sessionSet) {
             if (!session.isOpen()) {

@@ -46,7 +46,7 @@ public class ContainerLogHandler extends AbstractWebSocketHandler {
                         try {
                             entry.getValue().destroyTask();
                         } catch (IOException e) {
-                            log.error("释放ContainerLogTask任务", e);
+                            log.error("释放ContainerLogTask任务失败", e);
                             continue;
                         }
                         rmList.add(entry.getKey());

@@ -1,8 +1,11 @@
 package org.clever.devops;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
@@ -15,6 +18,7 @@ import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.websocket.BuildImageProgressMonitor;
 import org.junit.Test;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -75,14 +79,14 @@ public class Test01 {
         DockerClient dockerClient = newDockerClient();
 
         Map<String, String> labels = new HashMap<>();
-        labels.put("labels001","labels-001");
-        labels.put("labels002","labels-002");
-        labels.put("labels003","labels-003");
+        labels.put("labels001", "labels-001");
+        labels.put("labels002", "labels-002");
+        labels.put("labels003", "labels-003");
 
         Ports ports = new Ports();
         // ports.bind(new ExposedPort(1314), null); // 随机导出端口
         // ports.bind(new ExposedPort(1314), Ports.Binding.bindPort(8080)); // 指定端口 随机IP
-        ports.bind(new ExposedPort(1314), Ports.Binding.bindIpAndPort("192.168.159.131",8080)); // 指定IP端口
+        ports.bind(new ExposedPort(1314), Ports.Binding.bindIpAndPort("192.168.159.131", 8080)); // 指定IP端口
         CreateContainerResponse response = dockerClient.createContainerCmd("60815f5cb49d")
                 .withName("admin-demo-1.0.0-SNAPSHOT")
                 .withPortBindings()
@@ -96,6 +100,57 @@ public class Test01 {
 
     }
 
+    @Test
+    public void test04() throws InterruptedException, IOException {
+        DockerClient dockerClient = newDockerClient();
+        LogContainerCmd cmd = dockerClient.logContainerCmd("3d0e68ad8e36eb6dd27451ea0ace23b32272e3e4cca549d951f58cf78745dcfa");
+        cmd.withTimestamps(false);
+        cmd.withFollowStream(true);
+        cmd.withStdErr(true);
+        cmd.withStdOut(true);
+        // cmd.withSince(0);
+        // cmd.withTail(0)
+        // cmd.withTailAll();
+        ResultCallback resultCallback = cmd.exec(new ResultCallback<Frame>() {
+            private Closeable closeable;
+
+            @Override
+            public void onStart(Closeable closeable) {
+                this.closeable = closeable;
+            }
+
+            @Override
+            public void onNext(Frame object) {
+                log.info(new String(object.getPayload()));
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                log.error("查看日志出现异常", throwable);
+            }
+
+            @Override
+            public void onComplete() {
+                log.info("onComplete");
+            }
+
+            @Override
+            public void close() throws IOException {
+                if (closeable != null) {
+                    closeable.close();
+                }
+                log.info("close");
+            }
+        });
+
+//        resultCallback.wait();
+
+        while (true) {
+            Thread.sleep(100);
+        }
+
+//        dockerClient.close();
+    }
 
     @Test
     public void test02() throws IOException, DockerException, InterruptedException {
