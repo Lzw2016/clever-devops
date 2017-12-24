@@ -56,7 +56,7 @@ public class ImageConfigController extends BaseController {
         return imageConfigService.delete(id);
     }
 
-    @ApiOperation("根据ImageConfig新增Docker容器")
+    @ApiOperation("根据ImageConfig生成的镜像新增Docker容器")
     @PostMapping("/image_config/container/{id}" + JSON_SUFFIX)
     public CreateContainerResponse createContainer(@PathVariable Long id) {
         return imageConfigService.createContainer(id);

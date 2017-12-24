@@ -156,7 +156,7 @@ public class ImageConfigService extends BaseService {
     }
 
     /**
-     * 根据ImageConfig新增Docker容器
+     * 根据ImageConfig生成的镜像新增Docker容器
      */
     public CreateContainerResponse createContainer(Long id) {
         ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(id);
