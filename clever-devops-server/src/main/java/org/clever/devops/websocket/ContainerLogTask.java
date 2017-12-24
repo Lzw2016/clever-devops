@@ -114,7 +114,7 @@ public class ContainerLogTask extends Thread {
             cmd.withStdErr(true);
             cmd.withStdOut(true);
             // cmd.withSince(0);
-            // cmd.withTail(0)
+            cmd.withTail(10);
             // cmd.withTailAll();
             return cmd.exec(new ResultCallback<Frame>() {
                 private Closeable closeable;

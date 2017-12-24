@@ -109,7 +109,7 @@ public class Test01 {
         cmd.withStdErr(true);
         cmd.withStdOut(true);
         // cmd.withSince(0);
-        // cmd.withTail(0)
+         cmd.withTail(1000);
         // cmd.withTailAll();
         ResultCallback resultCallback = cmd.exec(new ResultCallback<Frame>() {
             private Closeable closeable;
