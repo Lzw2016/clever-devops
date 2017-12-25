@@ -109,12 +109,12 @@ public class ContainerLogTask extends Thread {
     public void run() {
         resultCallback = dockerClientUtils.execute(client -> {
             LogContainerCmd cmd = client.logContainerCmd(catContainerLogReq.getContainerId());
-            cmd.withTimestamps(false);
             cmd.withFollowStream(true);
-            cmd.withStdErr(true);
-            cmd.withStdOut(true);
-            // cmd.withSince(0);
-            cmd.withTail(10);
+            cmd.withTimestamps(catContainerLogReq.getTimestamps());
+            cmd.withStdErr(catContainerLogReq.getStderr());
+            cmd.withStdOut(catContainerLogReq.getStdout());
+             cmd.withSince(catContainerLogReq.getSince());
+            cmd.withTail(catContainerLogReq.getTail());
             // cmd.withTailAll();
             return cmd.exec(new ResultCallback<Frame>() {
                 private Closeable closeable;
