@@ -1,16 +1,24 @@
 package org.clever.devops.controller;
 
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.RemoveContainerCmd;
 import com.github.dockerjava.api.command.TopContainerResponse;
 import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.Frame;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.clever.common.server.controller.BaseController;
+import org.clever.devops.dto.request.CatContainerLogReq;
+import org.clever.devops.dto.response.CatContainerLogRes;
 import org.clever.devops.utils.DockerClientUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -20,6 +28,7 @@ import java.util.List;
 @Api(description = "Docker Containers操作")
 @RequestMapping("/devops")
 @RestController
+@Slf4j
 public class DockerContainersController extends BaseController {
 
     @Autowired
@@ -115,6 +124,62 @@ public class DockerContainersController extends BaseController {
 //            return cmd.exec();
 //        });
 //    }
+
+    @ApiOperation("读取Docker Containers的日志")
+    @GetMapping("/docker/container/logs" + JSON_SUFFIX)
+    public CatContainerLogRes logs(@Validated CatContainerLogReq catContainerLogReq) throws IOException {
+        final CatContainerLogRes catContainerLogRes = new CatContainerLogRes(null, false);
+        final StringBuilder logsText = new StringBuilder();
+        ResultCallback resultCallback = dockerClientUtils.execute(client -> client.logContainerCmd(catContainerLogReq.getContainerId())
+                .withFollowStream(false)
+                .withTimestamps(catContainerLogReq.getTimestamps())
+                .withStdOut(catContainerLogReq.getStdout())
+                .withStdErr(catContainerLogReq.getStderr())
+                .withSince(catContainerLogReq.getSince())
+                .withTail(catContainerLogReq.getTail())
+                .exec(new ResultCallback<Frame>() {
+                    private Closeable closeable;
+
+                    @Override
+                    public void onStart(Closeable closeable) {
+                        this.closeable = closeable;
+                    }
+
+                    @Override
+                    public void onNext(Frame object) {
+                        logsText.append(new String(object.getPayload()));
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        log.error("读取日志异常", throwable);
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        catContainerLogRes.setComplete(true);
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+                        if (closeable != null) {
+                            closeable.close();
+                        }
+                        catContainerLogRes.setComplete(true);
+                    }
+                })
+        );
+        while (!catContainerLogRes.isComplete()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.error("休眠中断", e);
+            }
+        }
+        resultCallback.close();
+        catContainerLogRes.setLogText(logsText.toString());
+        return catContainerLogRes;
+    }
 
     // TODO 监控统计数据 /containers/{id}/stats
 }

@@ -23,4 +23,12 @@ public class CatContainerLogRes extends BaseResponse {
      * 处理完成要求客户端主动关闭连接
      */
     private boolean complete = false;
+
+    public CatContainerLogRes() {
+    }
+
+    public CatContainerLogRes(String logText, boolean complete) {
+        this.logText = logText;
+        this.complete = complete;
+    }
 }

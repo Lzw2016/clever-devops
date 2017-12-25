@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.clever.common.model.request.BaseRequest;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.Range;
 
 /**
  * 查看Docker容器日志请求
@@ -25,11 +26,36 @@ public class CatContainerLogReq extends BaseRequest {
     @NotBlank
     private String containerId;
 
-    // TODO 设置参数
-    private Boolean timestamps;
-    private Boolean followStream;
-    private Boolean stdout;
-    private Boolean stderr;
-    private Integer since;
-    private Integer tail;
+    /**
+     * 是否显示容器时间
+     */
+    @ApiModelProperty("是否显示容器时间")
+    private Boolean timestamps = false;
+
+    /**
+     * 显示容器输出流
+     */
+    @ApiModelProperty("显示容器输出流")
+    private Boolean stdout = true;
+
+    /**
+     * 显示容器错误流
+     */
+    @ApiModelProperty("显示容器错误流")
+    private Boolean stderr = false;
+
+    /**
+     * 日志开始输出位置
+     */
+    @ApiModelProperty("日志开始输出位置")
+    @Range(min = 0)
+    private Integer since = 0;
+
+
+    /**
+     * tail 输出的行数
+     */
+    @ApiModelProperty("tail输出的行数")
+    @Range(min = 1, max = 10000)
+    private Integer tail = 1000;
 }
