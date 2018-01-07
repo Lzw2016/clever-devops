@@ -93,7 +93,7 @@ public class ImageConfigUtils {
             throw new BusinessException(String.format("Dockerfile文件[%1$s]不存在", dockerfilePath));
         }
         return dockerClientUtils.execute(client -> {
-            // 删除之前的镜像
+            // 删除之前的镜像 TODO 删除之前的镜像存在BUG
             if (StringUtils.isNotBlank(imageConfig.getImageId())) {
                 List<Image> imageList = client.listImagesCmd().withImageNameFilter(imageConfig.getImageId()).exec();
                 for (Image image : imageList) {
