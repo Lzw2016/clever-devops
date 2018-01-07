@@ -3,26 +3,24 @@ package org.clever.devops.websocket.log;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.Frame;
-import io.netty.util.internal.ConcurrentSet;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.clever.common.model.exception.BusinessException;
 import org.clever.common.utils.exception.ExceptionUtils;
-import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.dto.request.CatContainerLogReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
-import org.clever.devops.utils.DockerClientUtils;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.clever.devops.websocket.Task;
+import org.clever.devops.websocket.TaskType;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
-import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -34,19 +32,21 @@ import java.util.Set;
 @Service
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @Slf4j
-public class ContainerLogTask extends Thread {
-
-    @Autowired
-    private DockerClientUtils dockerClientUtils;
-
-    /**
-     * 连接当前任务的Session集合
-     */
-    private ConcurrentSet<WebSocketSession> sessionSet = new ConcurrentSet<>();
+public class ContainerLogTask extends Task {
 
     private CatContainerLogReq catContainerLogReq;
     private CatContainerLogRes catContainerLogRes = new CatContainerLogRes();
     private ResultCallback resultCallback;
+
+    /**
+     * 返回当前任务查看日志的容器ID
+     */
+    public static String getTaskId(CatContainerLogReq catContainerLogReq) {
+        if (catContainerLogReq == null || StringUtils.isBlank(catContainerLogReq.getContainerId())) {
+            throw new BusinessException("生成TaskId失败");
+        }
+        return "ContainerLogTask-" + catContainerLogReq.getContainerId();
+    }
 
     /**
      * 新建一个 ContainerLogTask
@@ -72,41 +72,11 @@ public class ContainerLogTask extends Thread {
     }
 
     /**
-     * 增加一个WebSocketSession到当前任务
-     */
-    public void addWebSocketSession(WebSocketSession session) {
-        sessionSet.add(session);
-    }
-
-    /**
-     * 从当前任务移除一个WebSocketSession
-     *
-     * @param sessionId SessionID
-     */
-    public boolean removeWebSocketSession(String sessionId) {
-        WebSocketSession rm = sessionSet.stream().filter(session -> Objects.equals(session.getId(), sessionId)).findFirst().orElse(null);
-        return rm != null && sessionSet.remove(rm);
-    }
-
-    /**
-     * 判断Session是否已经存在
-     */
-    public boolean contains(WebSocketSession session) {
-        return sessionSet.contains(session);
-    }
-
-    /**
-     * 返回连接当前任务的Session数量
-     */
-    public int getWebSocketSessionSize() {
-        return sessionSet == null ? 0 : sessionSet.size();
-    }
-
-    /**
      * 返回当前任务查看日志的容器ID
      */
-    public String getContainerId() {
-        return catContainerLogReq.getContainerId();
+    @Override
+    public String getTaskId() {
+        return getTaskId(catContainerLogReq);
     }
 
     /**
@@ -120,7 +90,7 @@ public class ContainerLogTask extends Thread {
             cmd.withTimestamps(catContainerLogReq.getTimestamps());
             cmd.withStdErr(catContainerLogReq.getStderr());
             cmd.withStdOut(catContainerLogReq.getStdout());
-             cmd.withSince(catContainerLogReq.getSince());
+            cmd.withSince(catContainerLogReq.getSince());
             cmd.withTail(catContainerLogReq.getTail());
             // cmd.withTailAll();
             return cmd.exec(new ResultCallback<Frame>() {
@@ -185,10 +155,16 @@ public class ContainerLogTask extends Thread {
     /**
      * 释放任务
      */
+    @Override
     public void destroyTask() throws IOException {
         if (resultCallback != null) {
             resultCallback.close();
         }
+    }
+
+    @Override
+    public TaskType getTaskType() {
+        return TaskType.ContainerLogTask;
     }
 
     /**
@@ -217,39 +193,6 @@ public class ContainerLogTask extends Thread {
         // 关闭所有连接
         for (WebSocketSession session : sessionSet) {
             WebSocketCloseSessionUtils.closeSession(session);
-        }
-    }
-
-    /**
-     * 发送消息到所有的客户端
-     *
-     * @param catContainerLogRes 消息对象
-     */
-    private void sendMessage(CatContainerLogRes catContainerLogRes) {
-        Set<WebSocketSession> rmSet = new HashSet<>();
-        for (WebSocketSession session : sessionSet) {
-            if (!session.isOpen()) {
-                rmSet.add(session);
-                continue;
-            }
-            sendMessage(session, catContainerLogRes);
-        }
-        // 移除关闭了的Session
-        sessionSet.removeAll(rmSet);
-    }
-
-    /**
-     * 发送消息到指定的客户端
-     *
-     * @param session            WebSocket连接
-     * @param catContainerLogRes 消息对象
-     */
-    private void sendMessage(WebSocketSession session, CatContainerLogRes catContainerLogRes) {
-        TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(catContainerLogRes));
-        try {
-            session.sendMessage(textMessage);
-        } catch (Throwable e) {
-            log.error("[ContainerLogTask] 发送任务结束消息异常", e);
         }
     }
 }

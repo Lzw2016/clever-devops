@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.junit.Test;
 
 import java.io.File;
@@ -47,5 +46,12 @@ public class Test02 {
         for (Ref ref : refs) {
             log.info("####　{} | {}", ref.getName(), ref.getObjectId().getName());
         }
+    }
+
+    @Test
+    public void t03() {
+        log.info("".getClass().getSimpleName());
+        log.info("".getClass().getTypeName());
+        log.info("".getClass().getCanonicalName());
     }
 }

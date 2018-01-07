@@ -8,17 +8,13 @@ import org.clever.common.utils.validator.ValidatorFactoryUtils;
 import org.clever.devops.dto.request.CatContainerLogReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
+import org.clever.devops.websocket.Handler;
+import org.clever.devops.websocket.Task;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
 import javax.validation.ConstraintViolationException;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 服务日志查看
@@ -28,64 +24,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 @Slf4j
-public class ContainerLogHandler extends AbstractWebSocketHandler {
-
-    // TODO 使用线程池 ThreadPoolTaskExecutor
-
-    /**
-     * 所有构建镜像的任务 Docker容器ID -> 查看日志任务
-     */
-    private static final ConcurrentHashMap<String, ContainerLogTask> CONTAINER_LOG_TASK_MAP = new ConcurrentHashMap<>();
-
-    static {
-        // 守护线程
-        Thread thread = new Thread(() -> {
-            //noinspection InfiniteLoopStatement
-            while (true) {
-                List<String> rmList = new ArrayList<>();
-                for (ConcurrentHashMap.Entry<String, ContainerLogTask> entry : CONTAINER_LOG_TASK_MAP.entrySet()) {
-                    if (!entry.getValue().isAlive()) {
-                        // 调用 ContainerLogTask 释放资源的方法
-                        try {
-                            entry.getValue().destroyTask();
-                        } catch (IOException e) {
-                            log.error("释放ContainerLogTask任务失败", e);
-                            continue;
-                        }
-                        rmList.add(entry.getKey());
-                    }
-                }
-                for (String key : rmList) {
-                    CONTAINER_LOG_TASK_MAP.remove(key);
-                }
-                log.info("[ContainerLogHandler] 移除务数[{}] 当前正在查看日志任务数[{}]", rmList.size(), CONTAINER_LOG_TASK_MAP.size());
-                try {
-                    Thread.sleep(1000 * 3);
-                } catch (Throwable e) {
-                    log.error("休眠失败", e);
-                }
-            }
-        });
-        thread.start();
-    }
-
-    /**
-     * 建立连接后
-     */
-    @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        log.info("[ContainerLogHandler] 建立连接");
-    }
+public class ContainerLogHandler extends Handler {
 
     /**
      * 消息处理，在客户端通过 WebSocket API 发送的消息会经过这里，然后进行相应的处理
      */
     @Override
-    public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        // 判断当前session是否已经在监听某个容器的日志了
-        for (ContainerLogTask containerLogTask : CONTAINER_LOG_TASK_MAP.values()) {
-            if (containerLogTask.contains(session)) {
-                containerLogTask.removeWebSocketSession(session.getId());
+    public void handleTextMessage(WebSocketSession session, TextMessage message) {
+        // 判断当前session是否存在对应的Task
+        for (Task task : getAllTask()) {
+            if (task.contains(session)) {
+                task.removeWebSocketSession(session.getId());
             }
         }
         log.info("[ContainerLogHandler] 消息处理 -> {}", message.getPayload());
@@ -103,39 +52,14 @@ public class ContainerLogHandler extends AbstractWebSocketHandler {
             sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractMessage(e)));
         }
         // 新建查看日志任务
-        ContainerLogTask containerLogTask = CONTAINER_LOG_TASK_MAP.get(catContainerLogReq.getContainerId());
-        if (containerLogTask != null) {
-            containerLogTask.addWebSocketSession(session);
+        Task task = getTaskByTaskId(ContainerLogTask.getTaskId(catContainerLogReq));
+        if (task != null) {
+            task.addWebSocketSession(session);
         } else {
-            containerLogTask = ContainerLogTask.newContainerLogTask(session, catContainerLogReq);
-            CONTAINER_LOG_TASK_MAP.put(catContainerLogReq.getContainerId(), containerLogTask);
+            ContainerLogTask containerLogTask = ContainerLogTask.newContainerLogTask(session, catContainerLogReq);
+            putTask(containerLogTask);
             containerLogTask.start();
         }
-    }
-
-    /**
-     * 消息传输错误处理
-     */
-    @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        log.error("消息传输错误处理", exception);
-    }
-
-    /**
-     * 关闭连接后
-     */
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
-        log.info("关闭连接后");
-        WebSocketCloseSessionUtils.closeSession(session);
-    }
-
-    /**
-     * 支持部分消息
-     */
-    @Override
-    public boolean supportsPartialMessages() {
-        return false;
     }
 
     /**
@@ -144,7 +68,8 @@ public class ContainerLogHandler extends AbstractWebSocketHandler {
      *
      * @param errorMessage 错误消息
      */
-    private void sendErrorMessage(WebSocketSession session, String errorMessage) {
+    @Override
+    protected void sendErrorMessage(WebSocketSession session, String errorMessage) {
         CatContainerLogRes catContainerLogRes = new CatContainerLogRes();
         catContainerLogRes.setLogText(errorMessage);
         catContainerLogRes.setComplete(true);

@@ -1,11 +1,9 @@
 package org.clever.devops.websocket.build;
 
-import io.netty.util.internal.ConcurrentSet;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
-import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.config.GlobalConfig;
 import org.clever.devops.dto.response.BuildImageRes;
@@ -16,14 +14,17 @@ import org.clever.devops.utils.CodeRepositoryUtils;
 import org.clever.devops.utils.ConsoleOutput;
 import org.clever.devops.utils.ImageConfigUtils;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
+import org.clever.devops.websocket.Task;
+import org.clever.devops.websocket.TaskType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
-import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.util.*;
+import java.util.Date;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 构建镜像的任务处理类
@@ -34,17 +35,12 @@ import java.util.*;
 @Service
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @Slf4j
-public class BuildImageTask extends Thread {
+public class BuildImageTask extends Task {
 
     @Autowired
     private GlobalConfig globalConfig;
     @Autowired
     private ImageConfigMapper imageConfigMapper;
-
-    /**
-     * 连接当前任务的Session集合
-     */
-    private ConcurrentSet<WebSocketSession> sessionSet = new ConcurrentSet<>();
 
     /**
      * 记录所有输出日志
@@ -65,6 +61,16 @@ public class BuildImageTask extends Thread {
      * 当前操作的“Docker镜像配置”
      */
     private ImageConfig imageConfig;
+
+    /**
+     * 返回当前任务构建的“镜像配置ID”
+     */
+    public static String getTaskId(ImageConfig imageConfig) {
+        if (imageConfig == null || imageConfig.getId() == null) {
+            throw new BusinessException("生成TaskId失败");
+        }
+        return "BuildImageTask-" + String.valueOf(imageConfig.getId());
+    }
 
     /**
      * 新建一个 BuildImageTask
@@ -97,6 +103,7 @@ public class BuildImageTask extends Thread {
     /**
      * 增加一个WebSocketSession到当前任务
      */
+    @Override
     public void addWebSocketSession(WebSocketSession session) {
         BuildImageRes tmp = new BuildImageRes();
         buildImageRes.setImageConfigId(imageConfig.getId());
@@ -108,34 +115,24 @@ public class BuildImageTask extends Thread {
     }
 
     /**
-     * 从当前任务移除一个WebSocketSession
-     *
-     * @param sessionId SessionID
-     */
-    public boolean removeWebSocketSession(String sessionId) {
-        WebSocketSession rm = sessionSet.stream().filter(session -> Objects.equals(session.getId(), sessionId)).findFirst().orElse(null);
-        return rm != null && sessionSet.remove(rm);
-    }
-
-    /**
-     * 判断Session是否已经存在
-     */
-    public boolean contains(WebSocketSession session) {
-        return sessionSet.contains(session);
-    }
-
-    /**
-     * 返回连接当前任务的Session数量
-     */
-    public int getWebSocketSessionSize() {
-        return sessionSet == null ? 0 : sessionSet.size();
-    }
-
-    /**
      * 返回当前任务构建的“镜像配置ID”
      */
-    public Long getImageConfigId() {
-        return imageConfig.getId();
+    @Override
+    public String getTaskId() {
+        return getTaskId(imageConfig);
+    }
+
+    /**
+     * 释放任务
+     */
+    @Override
+    public void destroyTask() {
+
+    }
+
+    @Override
+    public TaskType getTaskType() {
+        return TaskType.BuildImageTask;
     }
 
     /**
@@ -360,39 +357,6 @@ public class BuildImageTask extends Thread {
         // 关闭所有连接
         for (WebSocketSession session : sessionSet) {
             WebSocketCloseSessionUtils.closeSession(session);
-        }
-    }
-
-    /**
-     * 发送消息到所有的客户端
-     *
-     * @param buildImageRes 消息对象
-     */
-    private void sendMessage(BuildImageRes buildImageRes) {
-        Set<WebSocketSession> rmSet = new HashSet<>();
-        for (WebSocketSession session : sessionSet) {
-            if (!session.isOpen()) {
-                rmSet.add(session);
-                continue;
-            }
-            sendMessage(session, buildImageRes);
-        }
-        // 移除关闭了的Session
-        sessionSet.removeAll(rmSet);
-    }
-
-    /**
-     * 发送消息到指定的客户端
-     *
-     * @param session       WebSocket连接
-     * @param buildImageRes 消息对象
-     */
-    private void sendMessage(WebSocketSession session, BuildImageRes buildImageRes) {
-        TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(buildImageRes));
-        try {
-            session.sendMessage(textMessage);
-        } catch (Throwable e) {
-            log.error("[BuildImageTask] 发送任务结束消息异常", e);
         }
     }
 }
