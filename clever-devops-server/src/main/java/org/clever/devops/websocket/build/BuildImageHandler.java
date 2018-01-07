@@ -95,7 +95,7 @@ public class BuildImageHandler extends Handler {
             sendErrorMessage(session, String.format("当前构建镜像任务数已达到最大值:%1$s，请稍候再试", globalConfig.getMaxBuildImageTask()));
         }
         // 启动任务
-        putTask(BuildImageTask.newBuildImageTask(session, codeRepository, imageConfig));
+        putTask(BuildImageTask.newBuildImageTask(session, buildImageReq, codeRepository, imageConfig));
     }
 
     /**

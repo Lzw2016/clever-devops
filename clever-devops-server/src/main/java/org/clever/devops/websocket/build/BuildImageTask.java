@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.config.GlobalConfig;
+import org.clever.devops.dto.request.BuildImageReq;
 import org.clever.devops.dto.response.BuildImageRes;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
@@ -47,19 +48,9 @@ public class BuildImageTask extends Task {
      */
     private StringBuilder allLogText = new StringBuilder();
 
-    /**
-     * 响应发送数据
-     */
+    private BuildImageReq buildImageReq;
     private BuildImageRes buildImageRes = new BuildImageRes();
-
-    /**
-     * 当前操作的“代码仓库”
-     */
     private CodeRepository codeRepository;
-
-    /**
-     * 当前操作的“Docker镜像配置”
-     */
     private ImageConfig imageConfig;
 
     /**
@@ -76,12 +67,13 @@ public class BuildImageTask extends Task {
      * 新建一个 BuildImageTask
      *
      * @param session        WebSocket连接
+     * @param buildImageReq  任务请求参数
      * @param codeRepository 当前操作的“代码仓库”
      * @param imageConfig    当前操作的“Docker镜像配置”
      */
-    public static BuildImageTask newBuildImageTask(WebSocketSession session, CodeRepository codeRepository, ImageConfig imageConfig) {
+    public static BuildImageTask newBuildImageTask(WebSocketSession session, BuildImageReq buildImageReq, CodeRepository codeRepository, ImageConfig imageConfig) {
         BuildImageTask buildImageTask = SpringContextHolder.getBean(BuildImageTask.class);
-        buildImageTask.init(session, codeRepository, imageConfig);
+        buildImageTask.init(session, buildImageReq, codeRepository, imageConfig);
         return buildImageTask;
     }
 
@@ -89,11 +81,13 @@ public class BuildImageTask extends Task {
      * 初始化 BuildImageTask
      *
      * @param session        WebSocket连接
+     * @param buildImageReq  任务请求参数
      * @param codeRepository 当前操作的“代码仓库”
      * @param imageConfig    当前操作的“Docker镜像配置”
      */
-    private void init(WebSocketSession session, CodeRepository codeRepository, ImageConfig imageConfig) {
+    private void init(WebSocketSession session, BuildImageReq buildImageReq, CodeRepository codeRepository, ImageConfig imageConfig) {
         sessionSet.add(session);
+        this.buildImageReq = buildImageReq;
         this.codeRepository = codeRepository;
         this.imageConfig = imageConfig;
         // 构建响应数据
@@ -180,6 +174,9 @@ public class BuildImageTask extends Task {
             updateImageConfig.setBuildLogs(allLogText.toString());
             updateImageConfig.setUpdateDate(new Date());
             imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        }
+        if (buildImageReq.isStartContainer()) {
+            // TODO 新建容器 启动容器
         }
     }
 

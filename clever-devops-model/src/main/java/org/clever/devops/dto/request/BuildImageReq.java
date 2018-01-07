@@ -25,4 +25,9 @@ public class BuildImageReq extends BaseRequest {
     @ApiModelProperty("镜像配置ID")
     @NotNull
     private Long imageConfigId;
+
+    /**
+     * 构建镜像之后是否要直接启动容器
+     */
+    private boolean startContainer;
 }
