@@ -3,6 +3,8 @@ package org.clever.devops.websocket;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
+import org.clever.common.utils.validator.BaseValidatorUtils;
+import org.clever.common.utils.validator.ValidatorFactoryUtils;
 import org.clever.devops.dto.request.CatContainerLogReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
@@ -12,6 +14,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
+import javax.validation.ConstraintViolationException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,6 +82,12 @@ public class ContainerLogHandler extends AbstractWebSocketHandler {
      */
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        // 判断当前session是否已经在监听某个容器的日志了
+        for (ContainerLogTask containerLogTask : CONTAINER_LOG_TASK_MAP.values()) {
+            if (containerLogTask.contains(session)) {
+                containerLogTask.removeWebSocketSession(session.getId());
+            }
+        }
         log.info("[ContainerLogHandler] 消息处理 -> {}", message.getPayload());
         CatContainerLogReq catContainerLogReq = JacksonMapper.nonEmptyMapper().fromJson(message.getPayload(), CatContainerLogReq.class);
         // 校验请求消息
@@ -86,8 +95,13 @@ public class ContainerLogHandler extends AbstractWebSocketHandler {
             sendErrorMessage(session, "请求消息格式错误");
             return;
         }
-        // TODO 校验参数 CatContainerLogReq 的完整性
-
+        // 校验参数 CatContainerLogReq 的完整性
+        try {
+            BaseValidatorUtils.validateThrowException(ValidatorFactoryUtils.getHibernateValidator(), catContainerLogReq);
+        } catch (ConstraintViolationException e) {
+            log.info("请求参数校验失败", e);
+            sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractMessage(e)));
+        }
         // 新建查看日志任务
         ContainerLogTask containerLogTask = CONTAINER_LOG_TASK_MAP.get(catContainerLogReq.getContainerId());
         if (containerLogTask != null) {

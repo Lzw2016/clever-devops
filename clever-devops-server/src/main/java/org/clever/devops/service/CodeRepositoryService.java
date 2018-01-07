@@ -128,7 +128,7 @@ public class CodeRepositoryService extends BaseService {
         if (codeRepository == null) {
             throw new BusinessException(String.format("项目名称不存在，ProjectName=%1$s", projectName));
         }
-        // 校验当前代码仓库是否被依赖
+        // TODO 校验当前代码仓库是否被依赖
 
         // TODO 删除代码仓库
         return codeRepository;

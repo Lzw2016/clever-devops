@@ -3,6 +3,8 @@ package org.clever.devops.websocket;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
+import org.clever.common.utils.validator.BaseValidatorUtils;
+import org.clever.common.utils.validator.ValidatorFactoryUtils;
 import org.clever.devops.config.GlobalConfig;
 import org.clever.devops.dto.request.BuildImageReq;
 import org.clever.devops.dto.response.BuildImageRes;
@@ -18,6 +20,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
+import javax.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -86,6 +89,12 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
      */
     @Override
     public void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+        // 判断当前session是否已经有一个在构建的镜像
+        for (BuildImageTask buildImageTask : BUILD_IMAGE_TASK_MAP.values()) {
+            if (buildImageTask.contains(session)) {
+                buildImageTask.removeWebSocketSession(session.getId());
+            }
+        }
         log.info("[BuildImageHandler] 消息处理 -> {}", message.getPayload());
         BuildImageReq buildImageReq = JacksonMapper.nonEmptyMapper().fromJson(message.getPayload(), BuildImageReq.class);
         // 校验请求消息
@@ -93,8 +102,13 @@ public class BuildImageHandler extends AbstractWebSocketHandler {
             sendErrorMessage(session, "请求消息格式错误");
             return;
         }
-        // TODO 校验参数 BuildImageReq 的完整性
-
+        // 校验参数 BuildImageReq 的完整性
+        try {
+            BaseValidatorUtils.validateThrowException(ValidatorFactoryUtils.getHibernateValidator(), buildImageReq);
+        } catch (ConstraintViolationException e) {
+            log.info("请求参数校验失败", e);
+            sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractMessage(e)));
+        }
         // 业务校验 - 校验对应的配置信息都存在
         ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(buildImageReq.getImageConfigId());
         if (imageConfig == null) {

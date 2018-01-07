@@ -118,6 +118,13 @@ public class BuildImageTask extends Thread {
     }
 
     /**
+     * 判断Session是否已经存在
+     */
+    public boolean contains(WebSocketSession session) {
+        return sessionSet.contains(session);
+    }
+
+    /**
      * 返回连接当前任务的Session数量
      */
     public int getWebSocketSessionSize() {
