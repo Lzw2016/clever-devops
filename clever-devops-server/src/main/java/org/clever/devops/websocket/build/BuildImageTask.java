@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
+import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.config.GlobalConfig;
 import org.clever.devops.dto.request.BuildImageReq;
@@ -164,6 +165,7 @@ public class BuildImageTask extends Task {
         } catch (Throwable e) {
             buildState = ImageConfig.buildState_F;
             sendLogText(String.format("镜像构建失败，错误原因: %1$s", e.getMessage()));
+            sendLogText(String.format("具体异常堆栈: %1$s", ExceptionUtils.getStackTraceAsString(e)));
             sendCompleteMessage("------------------------------------------------------------- 镜像构建失败 -------------------------------------------------------------");
             log.error("镜像构建失败", e);
         } finally {
