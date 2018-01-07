@@ -70,6 +70,7 @@ public class DockerClientUtils {
      * @param executor 执行回调接口
      */
     public <T> T execute(DockerClientExecutor<T> executor) {
+        dumpPoolInfo();
         if (executor == null) {
             return null;
         }

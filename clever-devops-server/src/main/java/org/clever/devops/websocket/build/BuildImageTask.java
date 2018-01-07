@@ -1,4 +1,4 @@
-package org.clever.devops.websocket;
+package org.clever.devops.websocket.build;
 
 import io.netty.util.internal.ConcurrentSet;
 import lombok.extern.slf4j.Slf4j;

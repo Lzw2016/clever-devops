@@ -6,6 +6,7 @@ import com.github.dockerjava.api.command.RemoveContainerCmd;
 import com.github.dockerjava.api.command.TopContainerResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.Frame;
+import com.github.dockerjava.api.model.Statistics;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -171,7 +172,7 @@ public class DockerContainersController extends BaseController {
         );
         while (!catContainerLogRes.isComplete()) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 log.error("休眠中断", e);
             }
@@ -180,6 +181,41 @@ public class DockerContainersController extends BaseController {
         catContainerLogRes.setLogText(logsText.toString());
         return catContainerLogRes;
     }
+
+//    @ApiOperation("读取Docker Containers的日志")
+//    @GetMapping("/docker/container/logs" + JSON_SUFFIX)
+//    public Statistics stats(@PathVariable String id, ) {
+//        final Statistics[] statistics = new Statistics[1];
+//        dockerClientUtils.execute(client -> client.statsCmd("")
+//                .exec(new ResultCallback<Statistics>() {
+//                    @Override
+//                    public void onStart(Closeable closeable) {
+//
+//                    }
+//
+//                    @Override
+//                    public void onNext(Statistics object) {
+//                        statistics[0] = object;
+//                    }
+//
+//                    @Override
+//                    public void onError(Throwable throwable) {
+//
+//                    }
+//
+//                    @Override
+//                    public void onComplete() {
+//
+//                    }
+//
+//                    @Override
+//                    public void close() throws IOException {
+//
+//                    }
+//                }));
+//
+//        return statistics[0];
+//    }
 
     // TODO 监控统计数据 /containers/{id}/stats
 }

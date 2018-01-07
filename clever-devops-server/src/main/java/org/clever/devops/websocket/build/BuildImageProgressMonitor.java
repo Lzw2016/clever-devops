@@ -1,4 +1,4 @@
-package org.clever.devops.websocket;
+package org.clever.devops.websocket.build;
 
 import com.github.dockerjava.api.model.BuildResponseItem;
 import com.github.dockerjava.api.model.ResponseItem;
@@ -6,6 +6,7 @@ import com.github.dockerjava.core.command.BuildImageResultCallback;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.devops.utils.BackspaceStringUtils;
+import org.clever.devops.websocket.ProgressMonitorToWebSocket;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

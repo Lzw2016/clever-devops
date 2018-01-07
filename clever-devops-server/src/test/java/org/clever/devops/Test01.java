@@ -7,6 +7,7 @@ import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.Ports;
+import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -15,7 +16,7 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.swarm.Swarm;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.mapper.JacksonMapper;
-import org.clever.devops.websocket.BuildImageProgressMonitor;
+import org.clever.devops.websocket.build.BuildImageProgressMonitor;
 import org.junit.Test;
 
 import java.io.Closeable;
@@ -153,9 +154,45 @@ public class Test01 {
     }
 
     @Test
-    public void test05() throws IOException {
+    public void test05() throws IOException, InterruptedException {
         DockerClient dockerClient = newDockerClient();
+        ResultCallback<Statistics> resultCallback = dockerClient
+                .statsCmd("296abd2efb4f344c95057165b5abba73ca09117b33d7b2bca950b6e8a6e563e6")
+                .exec(new ResultCallback<Statistics>() {
+                    private Closeable closeable;
 
+                    @Override
+                    public void onStart(Closeable closeable) {
+                        log.info("onStart");
+                        this.closeable = closeable;
+                    }
+
+                    @Override
+                    public void onNext(Statistics object) {
+                        log.info("onNext = " + JacksonMapper.nonEmptyMapper().toJson(object));
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        log.info("onError", throwable);
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        log.info("onComplete");
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+                        log.info("close");
+                        closeable.close();
+                    }
+                });
+
+        for (int i = 0; i < 10; i++) {
+            Thread.sleep(1000);
+        }
+        resultCallback.close();
         dockerClient.close();
     }
 

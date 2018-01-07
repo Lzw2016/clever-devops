@@ -9,7 +9,6 @@ import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.config.GlobalConfig;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
-import org.clever.devops.websocket.GitProgressMonitor;
 import org.clever.devops.websocket.ProgressMonitorToWebSocket;
 
 import java.io.File;

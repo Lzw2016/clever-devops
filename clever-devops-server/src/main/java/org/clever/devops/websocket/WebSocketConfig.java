@@ -1,6 +1,8 @@
 package org.clever.devops.websocket;
 
 import lombok.extern.slf4j.Slf4j;
+import org.clever.devops.websocket.build.BuildImageHandler;
+import org.clever.devops.websocket.log.ContainerLogHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;

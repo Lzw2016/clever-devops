@@ -1,4 +1,4 @@
-package org.clever.devops.websocket;
+package org.clever.devops.websocket.log;
 
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.exception.ExceptionUtils;

@@ -1,4 +1,4 @@
-package org.clever.devops.websocket;
+package org.clever.devops.websocket.log;
 
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.LogContainerCmd;
