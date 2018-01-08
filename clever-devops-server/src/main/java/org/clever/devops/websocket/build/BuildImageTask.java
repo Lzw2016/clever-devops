@@ -122,7 +122,7 @@ public class BuildImageTask extends Task {
      */
     @Override
     public void destroyTask() {
-
+        closeAllSession();
     }
 
     @Override

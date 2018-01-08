@@ -4,6 +4,7 @@ import io.netty.util.internal.ConcurrentSet;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.devops.utils.DockerClientUtils;
+import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -106,4 +107,14 @@ public abstract class Task extends Thread {
      * 返回当前任务类型
      */
     public abstract TaskType getTaskType();
+
+    /**
+     * 关闭所有的 WebSocketSession
+     */
+    public void closeAllSession() {
+        for (WebSocketSession session : sessionSet) {
+            WebSocketCloseSessionUtils.closeSession(session);
+        }
+        sessionSet.clear();
+    }
 }

@@ -160,6 +160,7 @@ public class ContainerLogTask extends Task {
         if (resultCallback != null) {
             resultCallback.close();
         }
+        closeAllSession();
     }
 
     @Override
