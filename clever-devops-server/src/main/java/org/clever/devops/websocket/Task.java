@@ -61,7 +61,7 @@ public abstract class Task extends Thread {
     }
 
     /**
-     * 返回当前任务查看日志的容器ID
+     * 返回当前任务ID
      */
     public abstract String getTaskId();
 

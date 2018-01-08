@@ -39,7 +39,7 @@ public class ContainerLogTask extends Task {
     private ResultCallback resultCallback;
 
     /**
-     * 返回当前任务查看日志的容器ID
+     * 返回当前任务ID
      */
     public static String getTaskId(CatContainerLogReq catContainerLogReq) {
         if (catContainerLogReq == null || StringUtils.isBlank(catContainerLogReq.getContainerId())) {
@@ -72,7 +72,7 @@ public class ContainerLogTask extends Task {
     }
 
     /**
-     * 返回当前任务查看日志的容器ID
+     * 返回当前任务ID
      */
     @Override
     public String getTaskId() {

@@ -55,7 +55,7 @@ public class BuildImageTask extends Task {
     private ImageConfig imageConfig;
 
     /**
-     * 返回当前任务构建的“镜像配置ID”
+     * 返回当前任务ID
      */
     public static String getTaskId(ImageConfig imageConfig) {
         if (imageConfig == null || imageConfig.getId() == null) {
@@ -110,7 +110,7 @@ public class BuildImageTask extends Task {
     }
 
     /**
-     * 返回当前任务构建的“镜像配置ID”
+     * 返回当前任务ID
      */
     @Override
     public String getTaskId() {
