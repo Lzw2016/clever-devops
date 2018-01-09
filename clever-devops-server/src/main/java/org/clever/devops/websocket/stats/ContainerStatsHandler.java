@@ -1,10 +1,13 @@
 package org.clever.devops.websocket.stats;
 
 import lombok.extern.slf4j.Slf4j;
+import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.common.utils.validator.BaseValidatorUtils;
 import org.clever.common.utils.validator.ValidatorFactoryUtils;
 import org.clever.devops.dto.request.ContainerStatsReq;
+import org.clever.devops.dto.response.ContainerStatsRes;
+import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.clever.devops.websocket.Handler;
 import org.clever.devops.websocket.Task;
 import org.springframework.stereotype.Component;
@@ -48,9 +51,14 @@ public class ContainerStatsHandler extends Handler {
             log.info("请求参数校验失败", e);
             sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractMessage(e)));
         }
-        // TODO  新建监控服务状态任务
-
-
+        // 新建监控服务状态任务
+        Task task = getTaskByTaskId(ContainerStatsTask.getTaskId(containerStatsReq));
+        if (task != null) {
+            task.addWebSocketSession(session);
+        } else {
+            ContainerStatsTask containerStatsTask = ContainerStatsTask.newContainerStatsTask(session, containerStatsReq);
+            putAndStartTask(containerStatsTask);
+        }
     }
 
     /**
@@ -61,6 +69,14 @@ public class ContainerStatsHandler extends Handler {
      */
     @Override
     protected void sendErrorMessage(WebSocketSession session, String errorMessage) {
-
+        ContainerStatsRes containerStatsRes = new ContainerStatsRes(errorMessage, null, true);
+        TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(containerStatsRes));
+        try {
+            session.sendMessage(textMessage);
+        } catch (Throwable e) {
+            throw ExceptionUtils.unchecked(e);
+        }
+        // 关闭连接
+        WebSocketCloseSessionUtils.closeSession(session);
     }
 }

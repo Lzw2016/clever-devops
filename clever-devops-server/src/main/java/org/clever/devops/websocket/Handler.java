@@ -30,9 +30,11 @@ public abstract class Handler extends AbstractWebSocketHandler {
             //noinspection InfiniteLoopStatement
             while (true) {
                 List<String> rmList = new ArrayList<>();
+                int allSessionCount = 0;
                 for (ConcurrentHashMap.Entry<String, Task> entry : TASK_MAP.entrySet()) {
                     String key = entry.getKey();
                     Task task = entry.getValue();
+                    allSessionCount += task.getWebSocketSessionSize();
                     if (!task.isAlive()) {
                         try {
                             task.destroyTask();
@@ -46,7 +48,7 @@ public abstract class Handler extends AbstractWebSocketHandler {
                 for (String key : rmList) {
                     TASK_MAP.remove(key);
                 }
-                log.info(String.format("任务总数[%1$s] 移除务数[%2$s]", TASK_MAP.size(), rmList.size()));
+                log.info(String.format("连接总数[%1$s] 任务总数[%2$s] 移除务数[%3$s]", allSessionCount, TASK_MAP.size(), rmList.size()));
                 try {
                     Thread.sleep(1000 * 3);
                 } catch (Throwable e) {
@@ -75,7 +77,7 @@ public abstract class Handler extends AbstractWebSocketHandler {
      * 添加任务 <br/>
      * 启动任务 <br/>
      */
-    protected static void putTask(Task task) {
+    protected static void putAndStartTask(Task task) {
         TASK_MAP.put(task.getTaskId(), task);
         task.start();
     }

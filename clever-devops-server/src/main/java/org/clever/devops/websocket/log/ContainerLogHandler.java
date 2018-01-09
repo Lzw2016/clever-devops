@@ -57,8 +57,7 @@ public class ContainerLogHandler extends Handler {
             task.addWebSocketSession(session);
         } else {
             ContainerLogTask containerLogTask = ContainerLogTask.newContainerLogTask(session, catContainerLogReq);
-            putTask(containerLogTask);
-            containerLogTask.start();
+            putAndStartTask(containerLogTask);
         }
     }
 

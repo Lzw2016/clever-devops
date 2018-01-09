@@ -354,8 +354,6 @@ public class BuildImageTask extends Task {
         // 发送消息
         sendMessage(buildImageRes);
         // 关闭所有连接
-        for (WebSocketSession session : sessionSet) {
-            WebSocketCloseSessionUtils.closeSession(session);
-        }
+        closeAllSession();
     }
 }

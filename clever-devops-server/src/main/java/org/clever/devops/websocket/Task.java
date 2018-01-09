@@ -117,4 +117,33 @@ public abstract class Task extends Thread {
         }
         sessionSet.clear();
     }
+
+    /**
+     * 移除所有已经关闭了 WebSocketSession
+     */
+    public void removeCloseSession() {
+        // 移除关闭了的Session
+        Set<WebSocketSession> rmSet = new HashSet<>();
+        for (WebSocketSession session : sessionSet) {
+            if (!session.isOpen()) {
+                rmSet.add(session);
+            }
+        }
+        sessionSet.removeAll(rmSet);
+    }
+
+    /**
+     * 等待所有的连接关闭(会阻塞当前线程)
+     */
+    public void awaitAllSessionClose() {
+        while (getWebSocketSessionSize() > 0) {
+            try {
+                Thread.sleep(1000);
+                // 移除关闭了的Session
+                removeCloseSession();
+            } catch (InterruptedException e) {
+                log.info("休眠失败", e);
+            }
+        }
+    }
 }

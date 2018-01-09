@@ -10,7 +10,6 @@ import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.dto.request.CatContainerLogReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
-import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.clever.devops.websocket.Task;
 import org.clever.devops.websocket.TaskType;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -20,8 +19,6 @@ import org.springframework.web.socket.WebSocketSession;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * 服务日志查看的任务处理类
@@ -125,31 +122,8 @@ public class ContainerLogTask extends Task {
                 }
             });
         });
-        while (true) {
-            try {
-                Thread.sleep(1000);
-                // 移除关闭了的Session
-                Set<WebSocketSession> rmSet = new HashSet<>();
-                for (WebSocketSession session : sessionSet) {
-                    if (!session.isOpen()) {
-                        rmSet.add(session);
-                    }
-                }
-                sessionSet.removeAll(rmSet);
-                // 已经没有连接查看日志了 中断任务
-                if (sessionSet.size() <= 0) {
-                    this.interrupt();
-                }
-            } catch (InterruptedException e) {
-                log.info("中断停止查看日志");
-                try {
-                    destroyTask();
-                } catch (IOException e1) {
-                    log.info("释放ContainerLogTask任务失败", e);
-                }
-                return;
-            }
-        }
+        // 等待所有的连接关闭
+        awaitAllSessionClose();
     }
 
     /**
@@ -192,8 +166,6 @@ public class ContainerLogTask extends Task {
         // 发送消息
         sendMessage(catContainerLogRes);
         // 关闭所有连接
-        for (WebSocketSession session : sessionSet) {
-            WebSocketCloseSessionUtils.closeSession(session);
-        }
+        closeAllSession();
     }
 }
