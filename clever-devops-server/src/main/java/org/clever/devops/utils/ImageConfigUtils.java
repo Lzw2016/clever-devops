@@ -101,7 +101,7 @@ public class ImageConfigUtils {
                 imageList.addAll(client.listImagesCmd().withDanglingFilter(true).exec());
                 for (Image image : imageList) {
                     // Force 删除镜像，即使它被停止的容器使用或被标记
-                    // NoPrune 删除未被标记的父镜像
+                    // NoPrune 不删除未被标记的父镜像
                     client.removeImageCmd(image.getId()).withForce(true).withNoPrune(false).exec();
                     log.info("删除Docker image [{}]", image.getId());
                 }
