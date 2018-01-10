@@ -1,6 +1,5 @@
 package org.clever.devops.utils;
 
-import org.clever.devops.utils.BackspaceStringUtils;
 import org.clever.devops.websocket.ProgressMonitorToWebSocket;
 import org.eclipse.jgit.lib.BatchingProgressMonitor;
 

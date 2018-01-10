@@ -59,7 +59,7 @@ public class ImageConfigUpdateReq extends BaseRequest {
      * 服务访问域名
      */
     @ApiModelProperty("服务访问域名")
-    @Length(min = 1,max = 255)
+    @Length(min = 1, max = 255)
     private String serverUrl;
 
     /**

@@ -93,11 +93,14 @@ public class ImageConfigUtils {
             throw new BusinessException(String.format("Dockerfile文件[%1$s]不存在", dockerfilePath));
         }
         return dockerClientUtils.execute(client -> {
-            // 删除之前的镜像 TODO 删除之前的镜像存在BUG
+            // 删除之前的镜像
             if (StringUtils.isNotBlank(imageConfig.getImageId())) {
                 List<Image> imageList = client.listImagesCmd().withImageNameFilter(imageConfig.getImageId()).exec();
                 for (Image image : imageList) {
-                    client.removeImageCmd(image.getId()).withForce(true).withNoPrune(true).exec();
+                    client.removeImageCmd(image.getId())
+                            .withForce(true)        // 删除镜像，即使它被停止的容器使用或被标记
+                            .withNoPrune(false)     // 删除未被标记的父镜像
+                            .exec();
                 }
             }
             // 构建镜像

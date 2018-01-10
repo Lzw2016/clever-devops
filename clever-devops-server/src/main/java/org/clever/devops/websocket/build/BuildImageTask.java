@@ -15,7 +15,6 @@ import org.clever.devops.mapper.ImageConfigMapper;
 import org.clever.devops.utils.CodeRepositoryUtils;
 import org.clever.devops.utils.ConsoleOutput;
 import org.clever.devops.utils.ImageConfigUtils;
-import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.clever.devops.websocket.Task;
 import org.clever.devops.websocket.TaskType;
 import org.springframework.beans.factory.annotation.Autowired;
