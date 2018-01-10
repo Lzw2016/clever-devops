@@ -64,7 +64,7 @@ public class BuildImageHandler extends Handler {
             BaseValidatorUtils.validateThrowException(ValidatorFactoryUtils.getHibernateValidator(), buildImageReq);
         } catch (ConstraintViolationException e) {
             log.info("请求参数校验失败", e);
-            sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractMessage(e)));
+            sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractPropertyAndMessageAsList(e, ",")));
         }
         // 业务校验 - 校验对应的配置信息都存在
         ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(buildImageReq.getImageConfigId());

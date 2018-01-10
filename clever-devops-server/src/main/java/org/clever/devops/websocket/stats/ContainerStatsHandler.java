@@ -49,7 +49,7 @@ public class ContainerStatsHandler extends Handler {
             BaseValidatorUtils.validateThrowException(ValidatorFactoryUtils.getHibernateValidator(), containerStatsReq);
         } catch (ConstraintViolationException e) {
             log.info("请求参数校验失败", e);
-            sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractMessage(e)));
+            sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractPropertyAndMessageAsList(e, ",")));
         }
         // 新建监控服务状态任务
         Task task = getTaskByTaskId(ContainerStatsTask.getTaskId(containerStatsReq));

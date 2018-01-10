@@ -49,7 +49,7 @@ public class ContainerLogHandler extends Handler {
             BaseValidatorUtils.validateThrowException(ValidatorFactoryUtils.getHibernateValidator(), catContainerLogReq);
         } catch (ConstraintViolationException e) {
             log.info("请求参数校验失败", e);
-            sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractMessage(e)));
+            sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractPropertyAndMessageAsList(e, ",")));
         }
         // 新建查看日志任务
         Task task = getTaskByTaskId(ContainerLogTask.getTaskId(catContainerLogReq));
