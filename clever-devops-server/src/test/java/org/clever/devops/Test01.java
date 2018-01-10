@@ -6,8 +6,8 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.LogContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Frame;
+import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Ports;
-import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -156,43 +156,13 @@ public class Test01 {
     @Test
     public void test05() throws IOException, InterruptedException {
         DockerClient dockerClient = newDockerClient();
-        ResultCallback<Statistics> resultCallback = dockerClient
-                .statsCmd("296abd2efb4f344c95057165b5abba73ca09117b33d7b2bca950b6e8a6e563e6")
-                .exec(new ResultCallback<Statistics>() {
-                    private Closeable closeable;
-
-                    @Override
-                    public void onStart(Closeable closeable) {
-                        log.info("onStart");
-                        this.closeable = closeable;
-                    }
-
-                    @Override
-                    public void onNext(Statistics object) {
-                        log.info("onNext = " + JacksonMapper.nonEmptyMapper().toJson(object));
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        log.info("onError", throwable);
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        log.info("onComplete");
-                    }
-
-                    @Override
-                    public void close() throws IOException {
-                        log.info("close");
-                        closeable.close();
-                    }
-                });
-
-        for (int i = 0; i < 10; i++) {
-            Thread.sleep(1000);
+        List<Image> imageList = dockerClient.listImagesCmd()
+//                .withImageNameFilter("admin-demo:master")
+                .withDanglingFilter(true)
+                .exec(); // admin-demo:master
+        for (Image image : imageList) {
+            log.info("###### image ID ={}", image.getId());
         }
-        resultCallback.close();
         dockerClient.close();
     }
 

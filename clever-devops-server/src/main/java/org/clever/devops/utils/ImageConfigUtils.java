@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Ports;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -25,6 +26,7 @@ import java.util.*;
  * 作者： lzw<br/>
  * 创建时间：2017-12-19 12:45 <br/>
  */
+@Slf4j
 public class ImageConfigUtils {
 
     // private static final GlobalConfig GLOBAL_CONFIG = SpringContextHolder.getBean(GlobalConfig.class);
@@ -83,10 +85,10 @@ public class ImageConfigUtils {
         labels.put(IMAGE_LABEL_COMMIT_ID, imageConfig.getCommitId());
         labels.put(IMAGE_LABEL_SERVER_PORTS, imageConfig.getServerPorts());
         labels.put(IMAGE_LABEL_SERVER_URL, imageConfig.getServerUrl());
-        String branch = imageConfig.getBranch();
-        branch = branch.substring(branch.lastIndexOf('/') + 1, branch.length());
+        String branch = imageConfig.getBranch().substring(imageConfig.getBranch().lastIndexOf('/') + 1, imageConfig.getBranch().length());
+        String imageName = String.format("%1$s:%2$s", codeRepository.getProjectName(), branch);
         Set<String> tags = new HashSet<>();
-        tags.add(String.format("%1$s:%2$s", codeRepository.getProjectName(), branch));
+        tags.add(imageName);
         String dockerfilePath = FilenameUtils.concat(imageConfig.getCodeDownloadPath(), imageConfig.getDockerFilePath());
         File dockerfile = new File(dockerfilePath);
         if (!dockerfile.exists() || !dockerfile.isFile()) {
@@ -95,12 +97,13 @@ public class ImageConfigUtils {
         return dockerClientUtils.execute(client -> {
             // 删除之前的镜像
             if (StringUtils.isNotBlank(imageConfig.getImageId())) {
-                List<Image> imageList = client.listImagesCmd().withImageNameFilter(imageConfig.getImageId()).exec();
+                List<Image> imageList = client.listImagesCmd().withImageNameFilter(imageName).exec();
+                imageList.addAll(client.listImagesCmd().withDanglingFilter(true).exec());
                 for (Image image : imageList) {
-                    client.removeImageCmd(image.getId())
-                            .withForce(true)        // 删除镜像，即使它被停止的容器使用或被标记
-                            .withNoPrune(false)     // 删除未被标记的父镜像
-                            .exec();
+                    // Force 删除镜像，即使它被停止的容器使用或被标记
+                    // NoPrune 删除未被标记的父镜像
+                    client.removeImageCmd(image.getId()).withForce(true).withNoPrune(false).exec();
+                    log.info("删除Docker image [{}]", image.getId());
                 }
             }
             // 构建镜像
