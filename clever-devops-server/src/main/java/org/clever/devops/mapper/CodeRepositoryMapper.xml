@@ -20,7 +20,7 @@
         <!-- 项目描述 -->
         <result column="description" property="description"/>
         <!-- 项目语言(如 Java Node Go PHP) -->
-        <result column="`language`" property="language"/>
+        <result column="language" property="language"/>
         <!-- 代码仓库地址 -->
         <result column="repository_url" property="repositoryUrl"/>
         <!-- 代码仓库版本管理方式(如 GIT SVN) -->
