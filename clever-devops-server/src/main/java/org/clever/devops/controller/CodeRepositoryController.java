@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
 import org.clever.common.utils.mapper.BeanMapper;
 import org.clever.devops.dto.request.*;
+import org.clever.devops.dto.response.TestConnectRes;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.service.CodeRepositoryService;
@@ -59,9 +60,10 @@ public class CodeRepositoryController extends BaseController {
     }
 
     @ApiOperation("测试连接Git仓库")
-    @PostMapping("/code_repository/git_connect" + JSON_SUFFIX)
-    public void testGitConnect(@RequestBody @Validated TestGitConnectReq testGitConnectReq) {
+    @PostMapping("/code_repository/test_connect" + JSON_SUFFIX)
+    public TestConnectRes testConnect(@RequestBody @Validated TestGitConnectReq testGitConnectReq) {
         CodeRepositoryUtils.testConnect(testGitConnectReq.getRepositoryUrl(), testGitConnectReq.getAuthorizationType(), testGitConnectReq.getAuthorizationInfo());
+        return new TestConnectRes(true);
     }
 
     @ApiOperation("获取所有的“branch或Tag”信息")

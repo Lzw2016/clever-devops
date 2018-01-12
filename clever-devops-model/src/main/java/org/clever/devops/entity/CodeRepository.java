@@ -46,7 +46,7 @@ public class CodeRepository extends DataEntity {
     private String description;
 
     /**
-     * 项目语言(如 Java Node Go PHP)
+     * 项目语言(如 Java NodeJS Go PHP)
      */
     private String language;
 

@@ -39,9 +39,9 @@ public class CodeRepositoryAddReq extends BaseRequest {
     /**
      * 项目语言(如 Java Node Go PHP)
      */
-    @ApiModelProperty("项目语言(如 Java Node Go PHP)")
+    @ApiModelProperty("项目语言(如 Java NodeJS Go PHP)")
     @NotBlank
-    @Pattern(regexp = "Java|Node|Go|PHP")
+    @Pattern(regexp = "Java|NodeJS|Go|PHP")
     private String language;
 
     /**

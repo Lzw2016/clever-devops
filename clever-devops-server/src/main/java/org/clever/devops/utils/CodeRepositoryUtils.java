@@ -205,11 +205,23 @@ public class CodeRepositoryUtils {
      * 测试访问代码仓库地址 (使用 用户名密码) <br/>
      * 连接失败抛出异常
      *
-     * @param repositoryUrl 代码仓库地址
-     * @param username      用户名
-     * @param password      密码
+     * @param repositoryUrl     代码仓库地址
+     * @param authorizationType 授权类型
+     * @param authorizationInfo 授权信息
      */
-    public static void testConnect(String repositoryUrl, String username, String password) {
-        GitUtils.testConnect(repositoryUrl, username, password);
+    public static void testConnect(String repositoryUrl, String authorizationType, String authorizationInfo) {
+        if (Objects.equals(CodeRepository.Authorization_Type_1.toString(), authorizationType)) {
+            // 用户名密码
+            CodeRepository.UserNameAndPassword userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(authorizationInfo, CodeRepository.UserNameAndPassword.class);
+            if (userNameAndPassword == null) {
+                throw new BusinessException("读取授权用户名密码失败");
+            }
+            GitUtils.testConnect(repositoryUrl, userNameAndPassword.getUsername(), userNameAndPassword.getPassword());
+        } else if (Objects.equals(CodeRepository.Authorization_Type_0.toString(), authorizationType)) {
+            // 不需要授权
+            GitUtils.testConnect(repositoryUrl, null, null);
+        } else {
+            throw new BusinessException("不支持的代码仓库授权类型");
+        }
     }
 }
