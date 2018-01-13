@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--suppress SqlDialectInspection -->
+<mapper namespace="org.clever.devops.mapper.QueryMapper">
+
+    <resultMap id="ImageConfigQueryResMap" type="org.clever.devops.dto.response.ImageConfigQueryRes" autoMapping="true"/>
+    <select id="findImageConfig" resultMap="ImageConfigQueryResMap">
+        SELECT
+        b.project_name,
+        b.language,
+        b.repository_url,
+        b.repository_type,
+        b.authorization_type,
+        b.authorization_info,
+        a.*
+        FROM image_config a LEFT JOIN code_repository b ON (a.repository_id = b.id)
+        WHERE 1 = 1
+        <if test="projectName!='' and projectName!=null">
+            AND b.project_name = #{projectName}
+        </if>
+        <if test="language!='' and language!=null">
+            AND b.language = #{language}
+        </if>
+        <if test="repositoryUrl!='' and repositoryUrl!=null">
+            AND b.repository_url = #{repositoryUrl}
+        </if>
+        <if test="repositoryType!='' and repositoryType!=null">
+            AND b.repository_type = #{repositoryType}
+        </if>
+        <if test="authorizationType!='' and authorizationType!=null">
+            AND b.authorization_type = #{authorizationType}
+        </if>
+        <if test="repositoryId!=null">
+            AND a.repository_id = #{repositoryId}
+        </if>
+        <if test="branch!='' and branch!=null">
+            AND a.branch = #{branch}
+        </if>
+        <if test="commitId!='' and commitId!=null">
+            AND a.commit_id = #{commitId}
+        </if>
+        <if test="buildType!='' and buildType!=null">
+            AND a.build_type = #{buildType}
+        </if>
+        <if test="buildCmd!='' and buildCmd!=null">
+            AND a.build_cmd LIKE CONCAT('%', #{buildCmd}, '%')
+        </if>
+        <if test="serverPorts!='' and serverPorts!=null">
+            AND a.server_ports LIKE CONCAT('%', #{serverPorts}, '%')
+        </if>
+        <if test="serverUrl!='' and serverUrl!=null">
+            AND a.server_url LIKE CONCAT(#{serverUrl}, '%')
+        </if>
+        ORDER BY a.server_url, a.create_date DESC
+    </select>
+
+</mapper>

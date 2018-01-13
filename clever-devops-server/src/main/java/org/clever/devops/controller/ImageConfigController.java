@@ -8,6 +8,7 @@ import org.clever.common.server.controller.BaseController;
 import org.clever.devops.dto.request.ImageConfigAddReq;
 import org.clever.devops.dto.request.ImageConfigQueryReq;
 import org.clever.devops.dto.request.ImageConfigUpdateReq;
+import org.clever.devops.dto.response.ImageConfigQueryRes;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.service.ImageConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,7 @@ public class ImageConfigController extends BaseController {
 
     @ApiOperation("查询Docker镜像配置")
     @GetMapping("/image_config" + JSON_SUFFIX)
-    public PageInfo<ImageConfig> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
+    public PageInfo<ImageConfigQueryRes> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
         return imageConfigService.findImageConfig(imageConfigQueryReq);
     }
 

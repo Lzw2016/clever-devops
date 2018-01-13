@@ -24,8 +24,6 @@ public interface ImageConfigMapper extends CustomMapper<ImageConfig> {
      */
     ImageConfig getByServerUrl(@Param("serverUrl") String serverUrl);
 
-    List<ImageConfig> findImageConfig(ImageConfigQueryReq imageConfigQueryReq);
-
     /**
      * 查询正在构建的 ImageConfig
      *

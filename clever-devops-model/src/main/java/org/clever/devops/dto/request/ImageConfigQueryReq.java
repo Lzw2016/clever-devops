@@ -18,6 +18,36 @@ import org.clever.common.model.request.QueryByPage;
 public class ImageConfigQueryReq extends QueryByPage {
 
     /**
+     * 项目名称
+     */
+    @ApiModelProperty("项目名称")
+    private String projectName;
+
+    /**
+     * 项目语言(如 Java Node Go PHP)
+     */
+    @ApiModelProperty("项目语言(如 Java Node Go PHP)")
+    private String language;
+
+    /**
+     * 代码仓库地址
+     */
+    @ApiModelProperty("代码仓库地址")
+    private String repositoryUrl;
+
+    /**
+     * 代码仓库版本管理方式(如 GIT SVN)
+     */
+    @ApiModelProperty("代码仓库版本管理方式(如 GIT SVN)")
+    private String repositoryType;
+
+    /**
+     * 代码仓库授权类型(0：不需要授权；1：用户名密码；)
+     */
+    @ApiModelProperty("代码仓库授权类型(0：不需要授权；1：用户名密码；)")
+    private String authorizationType;
+
+    /**
      * 代码仓库ID
      */
     @ApiModelProperty("代码仓库ID")

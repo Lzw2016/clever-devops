@@ -11,10 +11,12 @@ import org.clever.common.utils.mapper.BeanMapper;
 import org.clever.devops.dto.request.ImageConfigAddReq;
 import org.clever.devops.dto.request.ImageConfigQueryReq;
 import org.clever.devops.dto.request.ImageConfigUpdateReq;
+import org.clever.devops.dto.response.ImageConfigQueryRes;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
+import org.clever.devops.mapper.QueryMapper;
 import org.clever.devops.utils.CodeRepositoryUtils;
 import org.clever.devops.utils.ImageConfigUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,9 +36,10 @@ public class ImageConfigService extends BaseService {
 
     @Autowired
     private CodeRepositoryMapper codeRepositoryMapper;
-
     @Autowired
     private ImageConfigMapper imageConfigMapper;
+    @Autowired
+    private QueryMapper queryMapper;
 
     /**
      * 新增Docker镜像配置
@@ -75,10 +78,10 @@ public class ImageConfigService extends BaseService {
     /**
      * 查询代码仓库
      */
-    public PageInfo<ImageConfig> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
+    public PageInfo<ImageConfigQueryRes> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
         return PageHelper
                 .startPage(imageConfigQueryReq.getPageNo(), imageConfigQueryReq.getPageSize())
-                .doSelectPageInfo(() -> imageConfigMapper.findImageConfig(imageConfigQueryReq));
+                .doSelectPageInfo(() -> queryMapper.findImageConfig(imageConfigQueryReq));
     }
 
     /**
