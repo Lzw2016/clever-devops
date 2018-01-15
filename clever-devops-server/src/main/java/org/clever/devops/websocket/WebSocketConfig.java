@@ -44,6 +44,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
                 .addHandler(containerStatsHandler, "/server_stats")
                 .addInterceptors(webSocketHandshakeInterceptor)
                 .setAllowedOrigins(allowsOrigins);
-        // .withSockJS();
+                // .withSockJS();
     }
 }

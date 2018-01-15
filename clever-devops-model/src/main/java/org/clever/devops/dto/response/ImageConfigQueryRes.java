@@ -46,6 +46,8 @@ public class ImageConfigQueryRes extends BaseResponse {
 
     // ------------------------------------------------------------------------------ ImageConfig
 
+    private Long id;
+
     /**
      * 代码仓库ID
      */
