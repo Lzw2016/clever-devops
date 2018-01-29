@@ -38,11 +38,10 @@ public abstract class Handler extends AbstractWebSocketHandler {
                     if (!task.isAlive()) {
                         try {
                             task.destroyTask();
+                            rmList.add(key);
                         } catch (IOException e) {
                             log.error(String.format("释放%1$s任务失败", task.getClass().getSimpleName()), e);
-                            continue;
                         }
-                        rmList.add(key);
                     }
                 }
                 for (String key : rmList) {
