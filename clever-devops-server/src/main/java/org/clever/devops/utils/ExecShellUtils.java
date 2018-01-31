@@ -1,10 +1,14 @@
 package org.clever.devops.utils;
 
+import com.pty4j.PtyProcess;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.model.exception.BusinessException;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 执行 shell 命令工具类<br/>
@@ -16,7 +20,46 @@ import java.io.PrintWriter;
 @Slf4j
 public class ExecShellUtils {
 
-    // TODO 使用线程池 ThreadPoolTaskExecutor
+    /**
+     * 所有 PtyProcess，启动时间戳 -> PtyProcess
+     */
+    private static final ConcurrentHashMap<Long, PtyProcess> PROCESS_MAP = new ConcurrentHashMap<>();
+
+    /**
+     * PtyProcess 超时时间
+     */
+    private static final long PROCESS_TIME_OUT = 1000 * 60 * 30;
+
+    static {
+        // 守护线程 TODO 使用线程池 ThreadPoolTaskExecutor
+        Thread thread = new Thread(() -> {
+            //noinspection InfiniteLoopStatement
+            while (true) {
+                List<Long> rmList = new ArrayList<>();
+                int allCount = PROCESS_MAP.size();
+                for (ConcurrentHashMap.Entry<Long, PtyProcess> entry : PROCESS_MAP.entrySet()) {
+                    Long startTime = entry.getKey();
+                    PtyProcess ptyProcess = entry.getValue();
+                    if (!ptyProcess.isAlive() || (System.currentTimeMillis() - startTime) > PROCESS_TIME_OUT) {
+                        rmList.add(startTime);
+                        if (ptyProcess.isAlive()) {
+                            ptyProcess.destroyForcibly();
+                        }
+                    }
+                }
+                for (Long startTime : rmList) {
+                    PROCESS_MAP.remove(startTime);
+                }
+                log.info(String.format("Process总数[%1$s] 移除Process数[%2$s] 当前Process数[%3$s]", allCount, rmList.size(), PROCESS_MAP.size()));
+                try {
+                    Thread.sleep(1000 * 3);
+                } catch (Throwable e) {
+                    log.error("休眠失败", e);
+                }
+            }
+        });
+        thread.start();
+    }
 
     /**
      * 在操作系统控制台上执行命令

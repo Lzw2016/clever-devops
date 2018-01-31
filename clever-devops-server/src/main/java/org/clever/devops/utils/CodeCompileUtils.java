@@ -48,6 +48,8 @@ public class CodeCompileUtils {
             }
         }
         commands.add(sb.toString());
+        // 增加退出命令
+        commands.add("exit");
         // 执行命令
         return ExecShellUtils.exec(consoleOutput, commands.toArray(new String[commands.size()])) == 0;
     }

@@ -47,7 +47,7 @@ public abstract class Handler extends AbstractWebSocketHandler {
                 for (String key : rmList) {
                     TASK_MAP.remove(key);
                 }
-                log.info(String.format("连接总数[%1$s] 任务总数[%2$s] 移除务数[%3$s]", allSessionCount, TASK_MAP.size(), rmList.size()));
+                log.info(String.format("连接总数[%1$s] 任务总数[%2$s] 移除任务数[%3$s]", allSessionCount, TASK_MAP.size(), rmList.size()));
                 try {
                     Thread.sleep(1000 * 3);
                 } catch (Throwable e) {

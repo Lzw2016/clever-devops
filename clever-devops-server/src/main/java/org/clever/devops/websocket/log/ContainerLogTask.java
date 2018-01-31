@@ -12,6 +12,7 @@ import org.clever.devops.dto.request.CatContainerLogReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
 import org.clever.devops.websocket.Task;
 import org.clever.devops.websocket.TaskType;
+import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import org.springframework.web.socket.WebSocketSession;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * 服务日志查看的任务处理类
@@ -30,6 +32,9 @@ import java.io.IOException;
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 @Slf4j
 public class ContainerLogTask extends Task {
+
+    private static final int logsBufferMaxSize = 10000;
+    private ArrayBlockingQueue<String> logsBuffer = new ArrayBlockingQueue<>(logsBufferMaxSize);
 
     private CatContainerLogReq catContainerLogReq;
     private CatContainerLogRes catContainerLogRes = new CatContainerLogRes();
@@ -69,6 +74,18 @@ public class ContainerLogTask extends Task {
     }
 
     /**
+     * 增加一个WebSocketSession到当前任务
+     */
+    @Override
+    public void addWebSocketSession(WebSocketSession session) {
+        sessionSet.add(session);
+        final Ansi ansi = Ansi.ansi();
+        logsBuffer.forEach(logs -> ansi.a(logs).newline());
+        sendMessage(session, new CatContainerLogRes(ansi.toString(), false));
+
+    }
+
+    /**
      * 返回当前任务ID
      */
     @Override
@@ -100,18 +117,35 @@ public class ContainerLogTask extends Task {
 
                 @Override
                 public void onNext(Frame object) {
-                    sendLogText(new String(object.getPayload()));
+                    int i = 0;
+                    // 处理换行符
+                    String[] logsArray = new String(object.getPayload()).split("\r\n|\n");
+                    int pollCount = logsBuffer.size() + logsArray.length - logsBufferMaxSize;
+                    while (i < pollCount) {
+                        // 移除
+                        logsBuffer.poll();
+                        // 添加
+                        logsBuffer.add(logsArray[i]);
+                        sendLogText(Ansi.ansi().a(logsArray[i]).newline().toString());
+                        i++;
+                    }
+                    while (i < logsArray.length) {
+                        // 添加
+                        logsBuffer.add(logsArray[i]);
+                        sendLogText(Ansi.ansi().a(logsArray[i]).newline().toString());
+                        i++;
+                    }
                 }
 
                 @Override
                 public void onError(Throwable throwable) {
                     log.warn("查看日志出现异常", throwable);
-                    sendCompleteMessage("\n查看日志出现异常\n" + ExceptionUtils.getStackTraceAsString(throwable));
+                    sendCompleteMessage(Ansi.ansi().fgRed().newline().a("查看日志出现异常").newline().a(ExceptionUtils.getStackTraceAsString(throwable)).reset().toString());
                 }
 
                 @Override
                 public void onComplete() {
-                    sendCompleteMessage("\nDocker容器已停止\n");
+                    sendCompleteMessage(Ansi.ansi().fgRed().newline().a("Docker容器已停止").newline().reset().toString());
                 }
 
                 @Override

@@ -17,6 +17,7 @@ import org.clever.devops.utils.ConsoleOutput;
 import org.clever.devops.utils.ImageConfigUtils;
 import org.clever.devops.websocket.Task;
 import org.clever.devops.websocket.TaskType;
+import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -160,12 +161,12 @@ public class BuildImageTask extends Task {
             clearTmpFile();
             // 镜像构建成功
             buildState = ImageConfig.buildState_S;
-            sendCompleteMessage("------------------------------------------------------------- 镜像构建成功 -------------------------------------------------------------");
+            sendCompleteMessage("------------ 镜像构建成功 ------------", Ansi.Color.GREEN);
         } catch (Throwable e) {
             buildState = ImageConfig.buildState_F;
-            sendLogText(String.format("镜像构建失败，错误原因: %1$s", e.getMessage()));
-            sendLogText(String.format("具体异常堆栈: %1$s", ExceptionUtils.getStackTraceAsString(e)));
-            sendCompleteMessage("------------------------------------------------------------- 镜像构建失败 -------------------------------------------------------------");
+            sendLogText(String.format("镜像构建失败，错误原因: %1$s", e.getMessage()), Ansi.Color.RED);
+            sendLogText(String.format("具体异常堆栈: %1$s", ExceptionUtils.getStackTraceAsString(e)), Ansi.Color.RED);
+            sendCompleteMessage("------------ 镜像构建失败 ------------", Ansi.Color.RED);
             log.error("镜像构建失败", e);
         } finally {
             ImageConfig updateImageConfig = new ImageConfig();
@@ -189,12 +190,12 @@ public class BuildImageTask extends Task {
         if (!Objects.equals(CodeRepository.Repository_Type_Git, codeRepository.getRepositoryType())) {
             throw new BusinessException("暂时只支持Git仓库");
         }
-        sendLogText("------------------------------------------------------------- 1.下载代码 -------------------------------------------------------------");
+        sendLogText("------------ 1.下载代码 ------------", Ansi.Color.BLUE);
         // 删除之前下载的代码文件
         if (CodeRepositoryUtils.deleteCode(imageConfig)) {
-            sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除成功");
+            sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除成功", Ansi.Color.GREEN);
         } else {
-            sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除失败");
+            sendLogText("[1.下载代码] 上一次构建镜像下载的代码文件删除失败", Ansi.Color.YELLOW);
         }
         // 更新 -- 代码下载临时文件夹路径
         ImageConfig updateImageConfig = new ImageConfig();
@@ -217,7 +218,7 @@ public class BuildImageTask extends Task {
         if (StringUtils.isBlank(commitId)) {
             throw new BusinessException("读取最新的CommitID失败");
         }
-        sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", imageConfig.getBranch(), imageConfig.getCommitId()));
+        sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", imageConfig.getBranch(), imageConfig.getCommitId()), null);
         // 更新CommitID
         updateImageConfig = new ImageConfig();
         updateImageConfig.setId(imageConfig.getId());
@@ -225,8 +226,8 @@ public class BuildImageTask extends Task {
         updateImageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
         // 下载代码
-        CodeRepositoryUtils.downloadCode(codeRepository, imageConfig, this::sendConsoleLogText);
-        sendLogText("[1.下载代码] 完成");
+        CodeRepositoryUtils.downloadCode(codeRepository, imageConfig, this::sendLogText);
+        sendLogText("[1.下载代码] 完成", Ansi.Color.GREEN);
     }
 
     /**
@@ -237,7 +238,7 @@ public class BuildImageTask extends Task {
         if (!Objects.equals(ImageConfig.buildType_Maven, imageConfig.getBuildType())) {
             throw new BusinessException("暂时只支持使用Maven编译");
         }
-        sendLogText("------------------------------------------------------------- 2.编译代码 -------------------------------------------------------------");
+        sendLogText("------------ 2.编译代码 ------------", Ansi.Color.BLUE);
         // 更新 -- ImageConfig 编译状态
         ImageConfig updateImageConfig = new ImageConfig();
         updateImageConfig.setId(imageConfig.getId());
@@ -248,12 +249,12 @@ public class BuildImageTask extends Task {
         CodeRepositoryUtils.compileCode(imageConfig, new ConsoleOutput() {
             @Override
             public void output(String str) {
-                sendConsoleLogText(str);
+                sendLogText(str);
             }
 
             @Override
             public void completed() {
-                sendConsoleLogText("\n[2.编译代码] 编译完成\n");
+                sendLogText("[2.编译代码] 编译完成", Ansi.Color.GREEN);
             }
         });
     }
@@ -262,7 +263,7 @@ public class BuildImageTask extends Task {
      * 3.构建镜像
      */
     private void buildImage() {
-        sendLogText("------------------------------------------------------------- 3.构建镜像 -------------------------------------------------------------");
+        sendLogText("------------ 3.构建镜像 ------------", Ansi.Color.BLUE);
         // 更新 -- ImageConfig 编译状态
         ImageConfig updateImageConfig = new ImageConfig();
         updateImageConfig.setId(imageConfig.getId());
@@ -284,43 +285,23 @@ public class BuildImageTask extends Task {
      * 4.清除临时文件
      */
     private void clearTmpFile() {
-        sendLogText("------------------------------------------------------------- 4.清除临时文件 -------------------------------------------------------------");
+        sendLogText("------------ 4.清除临时文件 ------------", Ansi.Color.BLUE);
         // 删除下载的代码
         if (CodeRepositoryUtils.deleteCode(imageConfig)) {
-            sendLogText("[4.清除临时文件] 删除下载的代码成功");
+            sendLogText("[4.清除临时文件] 删除下载的代码成功", Ansi.Color.GREEN);
         } else {
-            sendLogText("[4.清除临时文件] 删除下载的代码失败");
+            sendLogText("[4.清除临时文件] 删除下载的代码失败", Ansi.Color.YELLOW);
         }
     }
 
     /**
-     * 发送控制台输出到所有的客户端 (处理“\b”、“\r”字符)
+     * 发送日志消息到所有的客户端
      *
-     * @param str 控制台输出
+     * @param logText 日志消息
      */
-    private void sendConsoleLogText(String str) {
-        if (str == null) {
-            return;
-        }
-        // 统一换行处理
-        str = str.replace("\r\n", "\n");
-        // 处理控制台控制字符
-        for (int i = 0; i < str.length(); i++) {
-            char ch = str.charAt(i);
-            switch (ch) {
-                case '\b':
-                    allLogText.deleteCharAt(allLogText.length() - 1);
-                    break;
-                case '\r':
-                    int start = allLogText.lastIndexOf("\n") + 1;
-                    allLogText.delete(start, allLogText.length());
-                    break;
-                default:
-                    allLogText.append(ch);
-            }
-        }
-        // 输出数据
-        buildImageRes.setLogText(str);
+    private void sendLogText(String logText) {
+        allLogText.append(logText);
+        buildImageRes.setLogText(logText);
         buildImageRes.setComplete(false);
         sendMessage(buildImageRes);
     }
@@ -330,8 +311,12 @@ public class BuildImageTask extends Task {
      *
      * @param logText 日志消息
      */
-    private void sendLogText(String logText) {
-        logText = String.format("%1$s\n", StringUtils.trim(logText));
+    private void sendLogText(String logText, Ansi.Color color) {
+        Ansi ansi = Ansi.ansi();
+        if (color != null) {
+            ansi.fg(color);
+        }
+        logText = ansi.newline().a(logText).newline().reset().toString();
         allLogText.append(logText);
         buildImageRes.setLogText(logText);
         buildImageRes.setComplete(false);
@@ -345,8 +330,12 @@ public class BuildImageTask extends Task {
      *
      * @param completeMessage 任务结束消息
      */
-    private void sendCompleteMessage(String completeMessage) {
-        completeMessage = String.format("%1$s\n", StringUtils.trim(completeMessage));
+    private void sendCompleteMessage(String completeMessage, Ansi.Color color) {
+        Ansi ansi = Ansi.ansi();
+        if (color != null) {
+            ansi.fg(color);
+        }
+        completeMessage = ansi.newline().a(completeMessage).newline().reset().toString();
         allLogText.append(completeMessage);
         buildImageRes.setLogText(completeMessage);
         buildImageRes.setComplete(true);

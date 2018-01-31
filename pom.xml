@@ -20,6 +20,14 @@
             <id>alimaven</id>
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
         </repository>
+        <repository>
+            <id>my-maven-snapshots</id>
+            <url>http://39.108.68.132:8081/repository/maven-snapshots/</url>
+        </repository>
+        <repository>
+            <id>my-maven-releases</id>
+            <url>http://39.108.68.132:8081/repository/maven-releases/</url>
+        </repository>
     </repositories>
 
     <modules>
@@ -96,6 +104,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-pool2</artifactId>
                 <version>2.5.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.pty4j</groupId>
+                <artifactId>pty4j</artifactId>
+                <version>0.7.2</version>
             </dependency>
             <dependency>
                 <groupId>org.fusesource.jansi</groupId>
