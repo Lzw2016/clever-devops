@@ -90,28 +90,18 @@
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit</artifactId>
-                <version>4.9.0.201710071750-r</version>
+                <version>4.10.0.201712302008-r</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-pool2</artifactId>
-                <version>2.4.3</version>
+                <version>2.5.0</version>
             </dependency>
-            <!--<dependency>-->
-                <!--<groupId>org.fusesource.jansi</groupId>-->
-                <!--<artifactId>jansi</artifactId>-->
-                <!--<version>1.16</version>-->
-            <!--</dependency>-->
-            <!--<dependency>-->
-                <!--<groupId>org.jline</groupId>-->
-                <!--<artifactId>jline</artifactId>-->
-                <!--<version>3.5.1</version>-->
-            <!--</dependency>-->
-            <!--<dependency>-->
-                <!--<groupId>org.jline</groupId>-->
-                <!--<artifactId>jline-terminal</artifactId>-->
-                <!--<version>3.5.1</version>-->
-            <!--</dependency>-->
+            <dependency>
+                <groupId>org.fusesource.jansi</groupId>
+                <artifactId>jansi</artifactId>
+                <version>1.16</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
