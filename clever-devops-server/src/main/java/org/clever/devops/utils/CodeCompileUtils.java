@@ -61,7 +61,7 @@ public class CodeCompileUtils {
         }).collect(Collectors.toList());
 
         // 执行命令
-        Terminal terminal = ExecShellUtils.newTerminal(consoleOutput, commands.toArray(new String[commands.size()]));
+        Terminal terminal = ExecShellUtils.newTerminal(consoleOutput, commands);
         terminal.onTerminalResize(350, 150);
         return terminal.waitFor() == 0;
     }

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.clever.common.model.exception.BusinessException;
 
 import java.io.*;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -36,7 +37,7 @@ public class Terminal implements Closeable {
     /**
      * 初始化 Terminal
      */
-    public Terminal(ConsoleOutput consoleOutput, String... commands) {
+    public Terminal(ConsoleOutput consoleOutput, List<String> commands) {
         this.consoleOutput = consoleOutput;
         Map<String, String> envs = Maps.newHashMap(System.getenv());
         String[] termCommand;
@@ -59,8 +60,8 @@ public class Terminal implements Closeable {
         }
         outputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
         startTime = System.currentTimeMillis();
-        if (commands != null) {
-            onCommand(commands);
+        if (commands != null && commands.size() > 0) {
+            commands.forEach(this::onCommand);
         }
     }
 
@@ -176,6 +177,9 @@ public class Terminal implements Closeable {
             } catch (InterruptedException e) {
                 log.warn("Process WaitFor 中断", e);
             }
+        }
+        if (consoleOutput != null) {
+            consoleOutput.completed();
         }
         return result;
     }

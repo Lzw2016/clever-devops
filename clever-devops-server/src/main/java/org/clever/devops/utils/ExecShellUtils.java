@@ -71,7 +71,7 @@ public class ExecShellUtils {
      * @param commands      需要执行的命令
      * @return 返回命令执行最后的返回值(一般成功返回 0)
      */
-    public static Terminal newTerminal(ConsoleOutput consoleOutput, String[] commands) {
+    public static Terminal newTerminal(ConsoleOutput consoleOutput, List<String> commands) {
         Terminal terminal = new Terminal(consoleOutput, commands);
         PROCESS_MAP.put(terminal.getTaskId(), terminal);
         return terminal;

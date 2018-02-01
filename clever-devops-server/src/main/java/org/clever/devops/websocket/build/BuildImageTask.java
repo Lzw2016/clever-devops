@@ -161,7 +161,7 @@ public class BuildImageTask extends Task {
             clearTmpFile();
             // 镜像构建成功
             buildState = ImageConfig.buildState_S;
-            sendCompleteMessage("------------ 镜像构建成功 ------------", Ansi.Color.GREEN);
+            sendCompleteMessage("------------ 镜像构建成功 ------------", Ansi.Color.BLUE);
         } catch (Throwable e) {
             buildState = ImageConfig.buildState_F;
             sendLogText(String.format("镜像构建失败，错误原因: %1$s", e.getMessage()), Ansi.Color.RED);
