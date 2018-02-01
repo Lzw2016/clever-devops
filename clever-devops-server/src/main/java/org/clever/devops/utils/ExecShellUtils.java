@@ -1,11 +1,8 @@
 package org.clever.devops.utils;
 
-import com.pty4j.PtyProcess;
 import lombok.extern.slf4j.Slf4j;
-import org.clever.common.model.exception.BusinessException;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,12 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ExecShellUtils {
 
     /**
-     * 所有 PtyProcess，启动时间戳 -> PtyProcess
+     * 所有 PtyProcess，taskId -> PtyProcess
      */
-    private static final ConcurrentHashMap<Long, PtyProcess> PROCESS_MAP = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Terminal> PROCESS_MAP = new ConcurrentHashMap<>();
 
     /**
-     * PtyProcess 超时时间
+     * PtyProcess 超时时间 30分钟
      */
     private static final long PROCESS_TIME_OUT = 1000 * 60 * 30;
 
@@ -35,20 +32,26 @@ public class ExecShellUtils {
         Thread thread = new Thread(() -> {
             //noinspection InfiniteLoopStatement
             while (true) {
-                List<Long> rmList = new ArrayList<>();
+                List<String> rmList = new ArrayList<>();
                 int allCount = PROCESS_MAP.size();
-                for (ConcurrentHashMap.Entry<Long, PtyProcess> entry : PROCESS_MAP.entrySet()) {
-                    Long startTime = entry.getKey();
-                    PtyProcess ptyProcess = entry.getValue();
-                    if (!ptyProcess.isAlive() || (System.currentTimeMillis() - startTime) > PROCESS_TIME_OUT) {
-                        rmList.add(startTime);
-                        if (ptyProcess.isAlive()) {
-                            ptyProcess.destroyForcibly();
+                for (ConcurrentHashMap.Entry<String, Terminal> entry : PROCESS_MAP.entrySet()) {
+                    String taskId = entry.getKey();
+                    Terminal terminal = entry.getValue();
+                    if (!terminal.isAlive() || terminal.getRunningTime() > PROCESS_TIME_OUT) {
+                        if (terminal.isAlive()) {
+                            try {
+                                terminal.destroy();
+                                rmList.add(taskId);
+                            } catch (IOException e) {
+                                log.error(String.format("释放%1$s任务失败", terminal.getClass().getSimpleName()), e);
+                            }
+                        } else {
+                            rmList.add(taskId);
                         }
                     }
                 }
-                for (Long startTime : rmList) {
-                    PROCESS_MAP.remove(startTime);
+                for (String taskId : rmList) {
+                    PROCESS_MAP.remove(taskId);
                 }
                 log.info(String.format("Process总数[%1$s] 移除Process数[%2$s] 当前Process数[%3$s]", allCount, rmList.size(), PROCESS_MAP.size()));
                 try {
@@ -68,45 +71,11 @@ public class ExecShellUtils {
      * @param commands      需要执行的命令
      * @return 返回命令执行最后的返回值(一般成功返回 0)
      */
-    public static int exec(ConsoleOutput consoleOutput, String[] commands) {
-        int result = -1;
-        String cmd;
-        if (OSValidatorUtils.isWindows()) {
-            // Windows
-            cmd = "cmd";
-        } else if (OSValidatorUtils.isUnix()) {
-            // Linux
-            cmd = "/bin/sh";
-        } else if (OSValidatorUtils.isMac()) {
-            // Mac
-            cmd = "/bin/sh";
-        } else {
-            throw new BusinessException("不支持的操作系统，目前仅支持“Windows”和“Linux”、“Mac”");
-        }
-        Process process;
-        try {
-            process = Runtime.getRuntime().exec(cmd);
-        } catch (IOException e) {
-            throw new BusinessException(String.format("调用系统控制台异常，命令[%1$s]", cmd));
-        }
-        if (consoleOutput != null) {
-            new ConsoleOutputThread(consoleOutput, process.getInputStream()).start();
-            new ConsoleOutputThread(consoleOutput, process.getErrorStream()).start();
-        }
-        PrintWriter stdin = new PrintWriter(process.getOutputStream());
-        for (String command : commands) {
-            stdin.println(command);
-        }
-        stdin.close();
-        try {
-            result = process.waitFor();
-        } catch (InterruptedException e) {
-            log.error("进程被中断", e);
-        }
-        process.destroy();
-        if (consoleOutput != null) {
-            consoleOutput.completed();
-        }
-        return result;
+    public static Terminal newTerminal(ConsoleOutput consoleOutput, String[] commands) {
+        Terminal terminal = new Terminal(consoleOutput, commands);
+        PROCESS_MAP.put(terminal.getTaskId(), terminal);
+        return terminal;
     }
+
+
 }

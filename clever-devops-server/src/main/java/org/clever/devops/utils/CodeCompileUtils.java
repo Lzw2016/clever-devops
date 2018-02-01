@@ -7,6 +7,7 @@ import org.clever.common.model.exception.BusinessException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 项目编译打包工具类
@@ -50,7 +51,18 @@ public class CodeCompileUtils {
         commands.add(sb.toString());
         // 增加退出命令
         commands.add("exit");
+        // 增加回车字符
+        commands = commands.stream().map(cmd -> {
+            cmd = StringUtils.trim(cmd);
+            if (!cmd.endsWith("\r") || !cmd.endsWith("\r\n")) {
+                cmd = cmd + "\r";
+            }
+            return cmd;
+        }).collect(Collectors.toList());
+
         // 执行命令
-        return ExecShellUtils.exec(consoleOutput, commands.toArray(new String[commands.size()])) == 0;
+        Terminal terminal = ExecShellUtils.newTerminal(consoleOutput, commands.toArray(new String[commands.size()]));
+        terminal.onTerminalResize(350, 150);
+        return terminal.waitFor() == 0;
     }
 }

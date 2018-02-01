@@ -2,10 +2,7 @@ package org.clever.devops.mapper;
 
 import org.apache.ibatis.annotations.Param;
 import org.clever.common.server.mapper.CustomMapper;
-import org.clever.devops.dto.request.ImageConfigQueryReq;
 import org.clever.devops.entity.ImageConfig;
-
-import java.util.List;
 
 /**
  * 作者： lzw<br/>

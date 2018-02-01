@@ -19,6 +19,18 @@ import javax.validation.constraints.NotNull;
 @Data
 public class BuildImageReq extends BaseRequest {
 
+//    /**
+//     * 设置控制台列数(Terminal 编译代码有用)
+//     */
+//    @Range(min = 1, max = 500)
+//    private Integer columns = 350;
+//
+//    /**
+//     * 设置控制台行数(Terminal 编译代码有用)
+//     */
+//    @Range(min = 1)
+//    private Integer rows = 30;
+
     /**
      * 镜像配置ID
      */

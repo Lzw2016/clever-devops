@@ -1,17 +1,15 @@
 package org.clever.devops.websocket.build;
 
 import com.github.dockerjava.api.model.BuildResponseItem;
-import com.github.dockerjava.api.model.ResponseItem;
 import com.github.dockerjava.core.command.BuildImageResultCallback;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.clever.devops.utils.BackspaceStringUtils;
 import org.clever.devops.websocket.ProgressMonitorToWebSocket;
+import org.fusesource.jansi.Ansi;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 监控Docker构建镜像进度
@@ -22,20 +20,44 @@ import java.util.Map;
 @Slf4j
 public class BuildImageProgressMonitor extends BuildImageResultCallback {
 
-    /**
-     * stream 步骤信息
-     */
-    private List<String> stream = new ArrayList<>();
+    private static class TaskInfo implements Serializable {
+        /**
+         * 任务ID
+         */
+        private String taskId;
+        /**
+         * 步骤信息
+         */
+        private String stream;
+        /**
+         * 进度信息
+         */
+        private String progress;
+        /**
+         * 显示行号 从1开始
+         */
+        private int row;
+
+        public TaskInfo() {
+        }
+
+        public TaskInfo(String stream, String taskId, String progress, int row) {
+            this.stream = stream;
+            this.taskId = taskId;
+            this.progress = progress;
+            this.row = row;
+        }
+    }
 
     /**
-     * 任务信息 ID -> progress (id: status progress errorDetail)
+     * 任务信息
      */
-    private Map<String, String> taskMap = new LinkedHashMap<>();
+    private List<TaskInfo> taskInfoList = new ArrayList<>();
 
     /**
-     * 上一次发送的进度消息
+     * 光标的当前行 从1开始
      */
-    private String oldProgressMessage;
+    private int currentRow = 1;
 
     /**
      * 输出到WebSocket客户端 接口
@@ -49,62 +71,93 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
 
     @Override
     public void onNext(BuildResponseItem item) {
+        System.out.println(item);
         super.onNext(item);
-        String oldProgress = taskMap.get(item.getId());
-        String progress = null;
-        // 设置步骤信息
-        if (item.getStream() != null) {
-            stream.add(item.getStream());
-        }
-        // 处理进度字段
-        String itemId = item.getId() == null ? "" : item.getId();
-        String status = item.getStatus() == null ? "" : item.getStatus();
-        @SuppressWarnings("deprecation")
-        String progressText = item.getProgress() == null ? "" : item.getProgress();
-        // 设置任务进度信息
-        ResponseItem.ProgressDetail progressDetail = item.getProgressDetail();
-        if (progressDetail != null || StringUtils.isNotBlank(status)) {
-            // 格式 id: status progress
-            progress = String.format("%1$s: %2$s %3$s", itemId, status, progressText);
-        }
-        // 设置错误信息 id: status progress errorDetail
-        if (item.getErrorDetail() != null) {
-            String errorDetail = item.getErrorDetail() == null ? "" : String.format("[code=%1$s, message=%2$s]", item.getErrorDetail().getCode(), item.getErrorDetail().getMessage());
-            if (progress != null) {
-                progress = String.format("%1$s %2$s", progress, errorDetail);
-            } else if (oldProgress != null) {
-                progress = String.format("%1$s %2$s", oldProgress, errorDetail);
-            } else {
-                // 格式 id: status progress errorDetail
-                progress = String.format("%1$s: %2$s %3$s %4$s", itemId, status, progressText, errorDetail);
+        Ansi ansi = Ansi.ansi();
+        TaskInfo taskInfo = taskInfoList.stream().filter(task -> item.getId() != null && item.getId().equals(task.taskId)).findFirst().orElse(null);
+        if (taskInfo != null) {
+            // 覆盖之前对应的类容
+            int upLine = currentRow - taskInfo.row;
+            if (upLine > 0) {
+                ansi.cursorUpLine(Math.abs(upLine));
             }
-        }
-        // 设置进度
-        if (progress != null) {
-            taskMap.put(item.getId(), progress);
+            if (upLine < 0) {
+                ansi.cursorDownLine(Math.abs(upLine));
+            }
+            if (upLine == 0) {
+                ansi.cursorToColumn(1);
+            }
+            ansi.eraseLine();
+            taskInfo = getTaskInfo(item, taskInfo);
+            if (taskInfo == null) {
+                return;
+            }
+            currentRow = taskInfo.row;
+            if (StringUtils.isNotBlank(taskInfo.progress)) {
+                ansi.a(taskInfo.progress);
+            } else if (StringUtils.isNotBlank(taskInfo.stream)) {
+                ansi.a(taskInfo.stream);
+            }
+        } else {
+            taskInfo = getTaskInfo(item, null);
+            if (taskInfo == null) {
+                return;
+            }
+            int downLine = taskInfoList.size() - currentRow;
+            if (downLine > 0) {
+                ansi.cursorDownLine(downLine);
+            }
+            if (StringUtils.isNotBlank(taskInfo.progress)) {
+                ansi.a(taskInfo.progress);
+            } else if (StringUtils.isNotBlank(taskInfo.stream)) {
+                ansi.a(taskInfo.stream);
+            }
+            currentRow = taskInfoList.size();
         }
         // 发送进度
-        sendMsg();
+        progressMonitorToWebSocket.sendMsg(ansi.toString());
     }
 
-    /**
-     * 发送进度消息
-     */
-    private void sendMsg() {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (Map.Entry<String, String> task : taskMap.entrySet()) {
-            stringBuilder.append(task.getValue()).append("\n");
+    @SuppressWarnings("deprecation")
+    private TaskInfo getTaskInfo(BuildResponseItem item, TaskInfo taskInfo) {
+        String taskId = item.getId();
+        String stream = item.getStream();
+        // id: status progress errorDetail
+        StringBuilder progress = new StringBuilder();
+        if (item.getId() != null) {
+            progress.append(item.getId()).append(":");
         }
-        stringBuilder.append("\n");
-        for (String str : stream) {
-            stringBuilder.append(str);
+        if (item.getStatus() != null) {
+            progress.append(" ").append(item.getStatus());
         }
-        // 输出 发送进度消息
-        String backspaceStr = "";
-        if (oldProgressMessage != null) {
-            backspaceStr = BackspaceStringUtils.getBackspaceStr(oldProgressMessage.length());
+        if (item.getProgress() != null) {
+            progress.append(" ").append(item.getProgress());
         }
-        oldProgressMessage = stringBuilder.toString();
-        progressMonitorToWebSocket.sendMsg(backspaceStr + oldProgressMessage);
+        if (item.getErrorDetail() != null) {
+            progress.append(" ").append(item.getErrorDetail());
+        }
+        // 设置 TaskInfo
+        if (stream != null) {
+            if (stream.endsWith("\r\n")) {
+                stream = stream.substring(0, stream.length() - 2);
+            }
+            if (stream.endsWith("\n") || stream.endsWith("\r")) {
+                stream = stream.substring(0, stream.length() - 1);
+            }
+        }
+        if (progress.length() <= 0 && (stream == null || stream.length() <= 0)) {
+            return null;
+        }
+        if (taskInfo == null) {
+            taskInfo = new TaskInfo();
+            taskInfoList.add(taskInfo);
+            taskInfo.row = taskInfoList.size();
+        }
+        taskInfo.taskId = taskId;
+        taskInfo.stream = stream;
+        if (progress.length() > 0) {
+            taskInfo.progress = progress.toString();
+        }
+        return taskInfo;
     }
 }

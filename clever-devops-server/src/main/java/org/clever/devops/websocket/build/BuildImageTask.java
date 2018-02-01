@@ -272,7 +272,7 @@ public class BuildImageTask extends Task {
         updateImageConfig.setId(imageConfig.getId());
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
         // 构建镜像
-        String imageId = ImageConfigUtils.buildImage(codeRepository, imageConfig, new BuildImageProgressMonitor(this::sendConsoleLogText));
+        String imageId = ImageConfigUtils.buildImage(codeRepository, imageConfig, new BuildImageProgressMonitor(this::sendLogText));
         // 更新 -- ImageConfig 镜像ID
         updateImageConfig = new ImageConfig();
         updateImageConfig.setId(imageConfig.getId());
