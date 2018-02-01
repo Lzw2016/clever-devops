@@ -153,12 +153,20 @@ public class BuildImageTask extends Task {
             imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
             // 1.下载代码
             downloadCode();
+            Thread.sleep(100);
+            sendLogText(Ansi.ansi().reset().toString());
             // 2.编译代码
             compileCode();
+            Thread.sleep(100);
+            sendLogText(Ansi.ansi().reset().toString());
             // 3.构建镜像
             buildImage();
+            Thread.sleep(100);
+            sendLogText(Ansi.ansi().reset().toString());
             // 4.清除临时文件
             clearTmpFile();
+            Thread.sleep(100);
+            sendLogText(Ansi.ansi().reset().toString());
             // 镜像构建成功
             buildState = ImageConfig.buildState_S;
             sendCompleteMessage("------------ 镜像构建成功 ------------", Ansi.Color.BLUE);
