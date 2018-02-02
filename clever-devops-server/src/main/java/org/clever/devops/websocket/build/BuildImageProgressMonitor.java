@@ -98,6 +98,7 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
                 ansi.a(taskInfo.stream);
             }
         } else {
+            // 新增一行
             taskInfo = getTaskInfo(item, null);
             if (taskInfo == null) {
                 return;
@@ -153,7 +154,7 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
             taskInfo.row = taskInfoList.size();
         }
         taskInfo.taskId = taskId;
-        taskInfo.stream = stream + "\r\n";
+        taskInfo.stream = stream;
         if (progress.length() > 0) {
             taskInfo.progress = progress.toString();
         }

@@ -1,5 +1,6 @@
 package org.clever.devops.utils;
 
+import com.sun.jna.Platform;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
@@ -36,7 +37,7 @@ public class CodeCompileUtils {
         }
         // 组织需要执行的命令
         List<String> commands = new ArrayList<>();
-        if (FilenameUtils.getPrefix(projectPath).contains(":")) {
+        if (Platform.isWindows()) {
             // Windows 下先进入对应的盘符下
             commands.add(String.format("%1$s:", FilenameUtils.getPrefix(projectPath).split(":")[0]));
         }

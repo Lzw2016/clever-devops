@@ -211,6 +211,7 @@ public class BuildImageTask extends Task {
         updateImageConfig.setCodeDownloadPath(FilenameUtils.concat(globalConfig.getCodeDownloadPath(), UUID.randomUUID().toString()));
         updateImageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
         // 更新CommitID -> 下载代码
         String commitId = null;
         switch (codeRepository.getRepositoryType()) {
@@ -227,6 +228,7 @@ public class BuildImageTask extends Task {
             throw new BusinessException("读取最新的CommitID失败");
         }
         sendLogText(String.format("[1.下载代码] 更新Branch的最新的commitId [ %1$s -> %2$s ]", imageConfig.getBranch(), imageConfig.getCommitId()), null);
+        sendLogText(String.format("[1.下载代码] 下载路径[%1$s]", imageConfig.getCodeDownloadPath()), null);
         // 更新CommitID
         updateImageConfig = new ImageConfig();
         updateImageConfig.setId(imageConfig.getId());
@@ -236,6 +238,7 @@ public class BuildImageTask extends Task {
         // 下载代码
         CodeRepositoryUtils.downloadCode(codeRepository, imageConfig, this::sendLogText);
         sendLogText("[1.下载代码] 完成", Ansi.Color.GREEN);
+        imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
     }
 
     /**
@@ -265,6 +268,7 @@ public class BuildImageTask extends Task {
                 sendLogText("[2.编译代码] 编译完成", Ansi.Color.GREEN);
             }
         });
+        imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
     }
 
     /**
@@ -287,6 +291,7 @@ public class BuildImageTask extends Task {
         updateImageConfig.setImageId(imageId);
         updateImageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
     }
 
     /**

@@ -105,6 +105,7 @@ public class GitProgressMonitor extends BatchingProgressMonitor {
             currentRow = info.row;
             ansi.a(info.progress);
         } else {
+            // 新增一行
             info = new TaskInfo(taskName, progress, taskInfoList.size() + 1);
             taskInfoList.add(info);
             int downLine = taskInfoList.size() - currentRow;
