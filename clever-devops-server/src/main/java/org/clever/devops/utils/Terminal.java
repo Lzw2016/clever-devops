@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.clever.common.model.exception.BusinessException;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -59,16 +60,15 @@ public class Terminal implements Closeable {
             new Thread(() -> printReader(process.getErrorStream(), this.consoleOutput)).start(); // err
         }
         outputWriter = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+        new Thread(this::excCommand).start();
         startTime = System.currentTimeMillis();
-        if (commands != null && commands.size() > 0) {
-            commands.forEach(this::onCommand);
-        }
+        commandQueue.addAll(commands);
     }
 
     /**
      * 打印输出到终端
      */
-    private static void printReader(InputStream inputStream, ConsoleOutput consoleOutput) {
+    private void printReader(InputStream inputStream, ConsoleOutput consoleOutput) {
         if (consoleOutput == null) {
             return;
         }
@@ -84,26 +84,39 @@ public class Terminal implements Closeable {
     }
 
     /**
-     * 处理输入命令
+     * 执行输入的指令
+     */
+    private void excCommand() {
+        while (process != null && outputWriter != null && process.isAlive()) {
+            String cmd = commandQueue.poll();
+            try {
+                if (cmd == null) {
+                    Thread.sleep(100);
+                } else {
+                    outputWriter.write(cmd);
+                    outputWriter.flush();
+                }
+            } catch (Throwable e) {
+                log.error(String.format("执行命令[%1$s]失败", cmd), e);
+            }
+        }
+    }
+
+    /**
+     * 输入命令
+     */
+    public void onCommand(List<String> commands) {
+        commandQueue.addAll(commands);
+    }
+
+    /**
+     * 输入命令
      */
     public void onCommand(String... commands) {
         if (commands == null) {
             return;
         }
-        for (String str : commands) {
-            commandQueue.offer(str);
-        }
-        new Thread(() -> {
-            String cmd = null;
-            try {
-                while ((cmd = commandQueue.poll()) != null) {
-                    outputWriter.write(cmd);
-                }
-                outputWriter.flush();
-            } catch (IOException e) {
-                log.error(String.format("执行命令[%1$s]失败", cmd), e);
-            }
-        }).start();
+        commandQueue.addAll(Arrays.asList(commands));
     }
 
     /**
@@ -179,6 +192,10 @@ public class Terminal implements Closeable {
             }
         }
         if (consoleOutput != null) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {
+            }
             consoleOutput.completed();
         }
         return result;
