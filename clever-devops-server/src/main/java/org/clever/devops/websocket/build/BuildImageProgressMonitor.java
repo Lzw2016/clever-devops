@@ -154,7 +154,7 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
             taskInfo.row = taskInfoList.size();
         }
         taskInfo.taskId = taskId;
-        taskInfo.stream = stream;
+        taskInfo.stream = Ansi.ansi().a(stream).newline().toString();
         if (progress.length() > 0) {
             taskInfo.progress = progress.toString();
         }

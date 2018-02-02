@@ -154,22 +154,23 @@ public class BuildImageTask extends Task {
             // 1.下载代码
             downloadCode();
             Thread.sleep(100);
-            sendLogText(Ansi.ansi().reset().toString());
+            sendLogText(Ansi.ansi().newline().newline().reset().toString());
             // 2.编译代码
             compileCode();
             Thread.sleep(100);
-            sendLogText(Ansi.ansi().reset().toString());
+            sendLogText(Ansi.ansi().newline().newline().reset().toString());
             // 3.构建镜像
             buildImage();
             Thread.sleep(100);
-            sendLogText(Ansi.ansi().reset().toString());
+            sendLogText(Ansi.ansi().newline().newline().reset().toString());
             // 4.清除临时文件
             clearTmpFile();
             Thread.sleep(100);
-            sendLogText(Ansi.ansi().reset().toString());
+            sendLogText(Ansi.ansi().newline().newline().reset().toString());
             // 镜像构建成功
             buildState = ImageConfig.buildState_S;
-            sendCompleteMessage("------------ 镜像构建成功 ------------", Ansi.Color.BLUE);
+            sendLogText("------------ 镜像构建成功 ------------", Ansi.Color.BLUE);
+            sendCompleteMessage(String.format("镜像ID: [%1$s]", imageConfig.getImageId()), Ansi.Color.GREEN);
         } catch (Throwable e) {
             buildState = ImageConfig.buildState_F;
             sendLogText(String.format("镜像构建失败，错误原因: %1$s", e.getMessage()), Ansi.Color.RED);
@@ -237,7 +238,7 @@ public class BuildImageTask extends Task {
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
         // 下载代码
         CodeRepositoryUtils.downloadCode(codeRepository, imageConfig, this::sendLogText);
-        sendLogText("[1.下载代码] 完成", Ansi.Color.GREEN);
+        sendLogText(Ansi.ansi().newline().a("[1.下载代码] 完成").toString(), Ansi.Color.GREEN);
         imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
     }
 
@@ -329,7 +330,7 @@ public class BuildImageTask extends Task {
         if (color != null) {
             ansi.fg(color);
         }
-        logText = ansi.newline().a(logText).newline().reset().toString();
+        logText = ansi.a(logText).newline().reset().toString();
         allLogText.append(logText);
         buildImageRes.setLogText(logText);
         buildImageRes.setComplete(false);
@@ -348,7 +349,7 @@ public class BuildImageTask extends Task {
         if (color != null) {
             ansi.fg(color);
         }
-        completeMessage = ansi.newline().a(completeMessage).newline().reset().toString();
+        completeMessage = ansi.a(completeMessage).newline().reset().toString();
         allLogText.append(completeMessage);
         buildImageRes.setLogText(completeMessage);
         buildImageRes.setComplete(true);
