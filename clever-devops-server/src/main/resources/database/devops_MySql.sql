@@ -78,7 +78,7 @@ CREATE TABLE image_config
 
 
 /* ====================================================================================================================
-    image_build_log -- 镜像构建日志
+    build_image_log -- 镜像构建日志
 ==================================================================================================================== */
 CREATE TABLE image_build_log
 (
@@ -92,6 +92,22 @@ CREATE TABLE image_build_log
     PRIMARY KEY (id)
 ) COMMENT = '镜像构建日志';
 /*------------------------------------------------------------------------------------------------------------------------
+
+project_name
+language
+repository_url 代码仓库地址
+repository_type
+commit_id 代码提交ID(commitID)
+branch 代码branch或Tag
+code_download_path
+build_type
+build_cmd
+docker_file_path
+build_state
+image_id
+build_start_time
+build_end_time
+build_logs
 
 --------------------------------------------------------------------------------------------------------------------------*/
 

@@ -17,7 +17,7 @@
         FROM image_config a LEFT JOIN code_repository b ON (a.repository_id = b.id)
         WHERE 1 = 1
         <if test="projectName!='' and projectName!=null">
-            AND b.project_name = #{projectName}
+            AND b.project_name LIKE CONCAT('%', #{projectName}, '%')
         </if>
         <if test="language!='' and language!=null">
             AND b.language = #{language}
@@ -50,7 +50,7 @@
             AND a.server_ports LIKE CONCAT('%', #{serverPorts}, '%')
         </if>
         <if test="serverUrl!='' and serverUrl!=null">
-            AND a.server_url LIKE CONCAT(#{serverUrl}, '%')
+            AND a.server_url LIKE CONCAT('%', #{serverUrl}, '%')
         </if>
         ORDER BY a.server_url, a.create_date DESC
     </select>
