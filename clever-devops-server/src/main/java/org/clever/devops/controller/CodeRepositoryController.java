@@ -47,6 +47,12 @@ public class CodeRepositoryController extends BaseController {
         return codeRepositoryService.getCodeRepository(projectName);
     }
 
+    @ApiOperation("获取代码仓库")
+    @GetMapping("/code_repository/id/{id}" + JSON_SUFFIX)
+    public CodeRepository getCodeRepository(@PathVariable Long id) {
+        return codeRepositoryService.getCodeRepository(id);
+    }
+
     @ApiOperation("更新代码仓库")
     @PutMapping("/code_repository/{id}" + JSON_SUFFIX)
     public CodeRepository updateCodeRepository(@PathVariable Long id, @RequestBody @Validated CodeRepositoryUpdateReq codeRepositoryUpdateReq) {

@@ -73,6 +73,13 @@ public class CodeRepositoryService extends BaseService {
     }
 
     /**
+     * 获取代码仓库
+     */
+    public CodeRepository getCodeRepository(Long id) {
+        return codeRepositoryMapper.selectByPrimaryKey(id);
+    }
+
+    /**
      * 更新代码仓库
      *
      * @param id                      代码仓库ID
