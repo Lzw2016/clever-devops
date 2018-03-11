@@ -3,6 +3,7 @@ package org.clever.devops.dto.response;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.clever.common.model.response.BaseResponse;
+import org.clever.devops.entity.ImageConfig;
 
 /**
  * 构建镜像的响应结果
@@ -33,4 +34,9 @@ public class BuildImageRes extends BaseResponse {
      * 处理完成要求客户端主动关闭连接
      */
     private boolean complete = false;
+
+    /**
+     * 当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)
+     */
+    private Character buildState = ImageConfig.buildState_0;
 }

@@ -105,6 +105,7 @@ public class BuildImageTask extends Task {
         tmp.setStartTime(buildImageRes.getStartTime());
         tmp.setLogText(allLogText.toString());
         tmp.setComplete(false);
+        tmp.setBuildState(imageConfig.getBuildState());
         sendMessage(session, tmp);
         sessionSet.add(session);
     }
@@ -152,14 +153,17 @@ public class BuildImageTask extends Task {
             updateImageConfig.setUpdateDate(new Date());
             imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
             // 1.下载代码
+            buildImageRes.setBuildState(ImageConfig.buildState_1);
             downloadCode();
             Thread.sleep(100);
             sendLogText(Ansi.ansi().newline().newline().reset().toString());
             // 2.编译代码
+            buildImageRes.setBuildState(ImageConfig.buildState_2);
             compileCode();
             Thread.sleep(100);
             sendLogText(Ansi.ansi().newline().newline().reset().toString());
             // 3.构建镜像
+            buildImageRes.setBuildState(ImageConfig.buildState_3);
             buildImage();
             Thread.sleep(100);
             sendLogText(Ansi.ansi().newline().newline().reset().toString());
@@ -169,10 +173,12 @@ public class BuildImageTask extends Task {
             sendLogText(Ansi.ansi().newline().newline().reset().toString());
             // 镜像构建成功
             buildState = ImageConfig.buildState_S;
+            buildImageRes.setBuildState(ImageConfig.buildState_S);
             sendLogText("------------ 镜像构建成功 ------------", Ansi.Color.BLUE);
             sendCompleteMessage(String.format("镜像ID: [%1$s]", imageConfig.getImageId()), Ansi.Color.GREEN);
         } catch (Throwable e) {
             buildState = ImageConfig.buildState_F;
+            buildImageRes.setBuildState(ImageConfig.buildState_F);
             sendLogText(String.format("镜像构建失败，错误原因: %1$s", e.getMessage()), Ansi.Color.RED);
             sendLogText(String.format("具体异常堆栈: %1$s", ExceptionUtils.getStackTraceAsString(e)), Ansi.Color.RED);
             sendCompleteMessage("------------ 镜像构建失败 ------------", Ansi.Color.RED);
