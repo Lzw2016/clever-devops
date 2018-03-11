@@ -11,6 +11,7 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.server.controller.BaseController;
 import org.clever.devops.dto.request.CatContainerLogReq;
+import org.clever.devops.dto.request.ContainerQueryReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
 import org.clever.devops.utils.DockerClientUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ public class DockerContainersController extends BaseController {
 
     @ApiOperation("查询Docker Containers")
     @GetMapping("/docker/container" + JSON_SUFFIX)
-    public List<Container> listContainers() {
+    public List<Container> listContainers(ContainerQueryReq req) {
         return dockerClientUtils.execute(client -> client.listContainersCmd().exec());
     }
 

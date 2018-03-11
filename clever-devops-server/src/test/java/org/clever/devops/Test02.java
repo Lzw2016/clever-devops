@@ -10,6 +10,8 @@ import java.io.File;
 import java.util.Collection;
 
 /**
+ * jgit
+ *
  * 作者： lzw<br/>
  * 创建时间：2017-12-02 17:48 <br/>
  */
