@@ -20,45 +20,14 @@ import java.util.List;
 @Slf4j
 public class BuildImageProgressMonitor extends BuildImageResultCallback {
 
-    private static class TaskInfo implements Serializable {
-        /**
-         * 任务ID
-         */
-        private String taskId;
-        /**
-         * 步骤信息
-         */
-        private String stream;
-        /**
-         * 进度信息
-         */
-        private String progress;
-        /**
-         * 显示行号 从1开始
-         */
-        private int row;
-
-        public TaskInfo() {
-        }
-
-        public TaskInfo(String stream, String taskId, String progress, int row) {
-            this.stream = stream;
-            this.taskId = taskId;
-            this.progress = progress;
-            this.row = row;
-        }
-    }
-
     /**
      * 任务信息
      */
     private List<TaskInfo> taskInfoList = new ArrayList<>();
-
     /**
      * 光标的当前行 从1开始
      */
     private int currentRow = 1;
-
     /**
      * 输出到WebSocket客户端 接口
      */
@@ -159,5 +128,34 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
             taskInfo.progress = progress.toString();
         }
         return taskInfo;
+    }
+
+    private static class TaskInfo implements Serializable {
+        /**
+         * 任务ID
+         */
+        private String taskId;
+        /**
+         * 步骤信息
+         */
+        private String stream;
+        /**
+         * 进度信息
+         */
+        private String progress;
+        /**
+         * 显示行号 从1开始
+         */
+        private int row;
+
+        public TaskInfo() {
+        }
+
+        public TaskInfo(String stream, String taskId, String progress, int row) {
+            this.stream = stream;
+            this.taskId = taskId;
+            this.progress = progress;
+            this.row = row;
+        }
     }
 }

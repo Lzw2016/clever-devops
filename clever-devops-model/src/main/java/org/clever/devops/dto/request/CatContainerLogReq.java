@@ -5,8 +5,9 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.clever.common.model.request.BaseRequest;
-import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.Range;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * 查看Docker容器日志请求
@@ -19,12 +20,7 @@ import org.hibernate.validator.constraints.Range;
 @Data
 public class CatContainerLogReq extends BaseRequest {
 
-    /**
-     * Docker容器ID
-     */
-    @ApiModelProperty("Docker容器ID")
-    @NotBlank
-    private String containerId;
+//    private Boolean follow = false;
 
     /**
      * 是否显示容器时间
@@ -51,11 +47,11 @@ public class CatContainerLogReq extends BaseRequest {
     @Range(min = 0)
     private Integer since = 0;
 
-
     /**
      * tail 输出的行数
      */
     @ApiModelProperty("tail输出的行数")
+    @NotNull
     @Range(min = 1, max = 10000)
     private Integer tail = 1000;
 }

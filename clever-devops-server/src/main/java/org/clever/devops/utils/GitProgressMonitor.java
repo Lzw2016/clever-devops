@@ -18,37 +18,14 @@ import java.util.List;
 @Slf4j
 public class GitProgressMonitor extends BatchingProgressMonitor {
 
-    private static class TaskInfo implements Serializable {
-        /**
-         * 任务名
-         */
-        private String taskName;
-        /**
-         * 任务内容
-         */
-        private String progress;
-        /**
-         * 显示行号 从1开始
-         */
-        private int row;
-
-        public TaskInfo(String taskName, String progress, int row) {
-            this.taskName = taskName;
-            this.progress = progress;
-            this.row = row;
-        }
-    }
-
     /**
      * 任务信息
      */
     private List<TaskInfo> taskInfoList = new ArrayList<>();
-
     /**
      * 光标的当前行 从1开始
      */
     private int currentRow = 1;
-
     /**
      * 输出到WebSocket客户端 接口
      */
@@ -132,5 +109,26 @@ public class GitProgressMonitor extends BatchingProgressMonitor {
             progress = progress + ", done.";
         }
         sendMsg(taskName, progress);
+    }
+
+    private static class TaskInfo implements Serializable {
+        /**
+         * 任务名
+         */
+        private String taskName;
+        /**
+         * 任务内容
+         */
+        private String progress;
+        /**
+         * 显示行号 从1开始
+         */
+        private int row;
+
+        public TaskInfo(String taskName, String progress, int row) {
+            this.taskName = taskName;
+            this.progress = progress;
+            this.row = row;
+        }
     }
 }

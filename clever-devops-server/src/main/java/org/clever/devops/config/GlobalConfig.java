@@ -29,12 +29,21 @@ public class GlobalConfig {
     private String mavenSettingsPath;
 
     /**
-     * Docker 主机地址
+     * Docker 主机地址 TODO 删除
      */
     private String dockerHost;
+
+    /**
+     * Docker 连接地址
+     */
+    private String dockerUri;
 
     /**
      * Docker API 版本
      */
     private String dockerVersion;
+
+    private Integer dockerConnectionPoolSize;
+    private Integer dockerConnectTimeoutMillis;
+    private Integer dockerReadTimeoutMillis;
 }

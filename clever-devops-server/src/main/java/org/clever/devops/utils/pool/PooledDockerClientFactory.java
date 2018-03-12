@@ -21,14 +21,13 @@ import java.util.List;
 public class PooledDockerClientFactory implements PooledObjectFactory<DockerClient> {
 
     /**
-     * DockerClient 连接配置信息
-     */
-    private final List<DockerClientConfig> clientConfigs;
-
-    /**
      * 当前使用连接配置位置
      */
     private static Integer currentIndex = 0;
+    /**
+     * DockerClient 连接配置信息
+     */
+    private final List<DockerClientConfig> clientConfigs;
 
     public PooledDockerClientFactory(List<DockerClientConfig> clientConfigs) {
         if (clientConfigs == null || clientConfigs.size() <= 0) {

@@ -1,25 +1,28 @@
 package org.clever.devops.controller;
 
-import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.InspectContainerResponse;
-import com.github.dockerjava.api.command.RemoveContainerCmd;
-import com.github.dockerjava.api.command.TopContainerResponse;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.Frame;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LogStream;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.Container;
+import com.spotify.docker.client.messages.ContainerInfo;
+import com.spotify.docker.client.messages.ContainerStats;
+import com.spotify.docker.client.messages.TopResults;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.clever.common.server.controller.BaseController;
+import org.clever.devops.convert.ListContainersParamConvert;
+import org.clever.devops.convert.LogsParamConvert;
+import org.clever.devops.convert.RemoveContainerParamConvert;
 import org.clever.devops.dto.request.CatContainerLogReq;
 import org.clever.devops.dto.request.ContainerQueryReq;
+import org.clever.devops.dto.request.ContainerRemoveReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
-import org.clever.devops.utils.DockerClientUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -33,60 +36,67 @@ import java.util.List;
 public class DockerContainersController extends BaseController {
 
     @Autowired
-    private DockerClientUtils dockerClientUtils;
+    private DockerClient dockerClient;
 
     @ApiOperation("查询Docker Containers")
     @GetMapping("/docker/container" + JSON_SUFFIX)
-    public List<Container> listContainers(ContainerQueryReq req) {
-        return dockerClientUtils.execute(client -> client.listContainersCmd().exec());
+    public List<Container> listContainers(ContainerQueryReq req) throws DockerException, InterruptedException {
+        return dockerClient.listContainers(ListContainersParamConvert.convert(req));
     }
 
     @ApiOperation("检查Docker Containers")
     @GetMapping("/docker/container/{id}" + JSON_SUFFIX)
-    public InspectContainerResponse inspect(@PathVariable String id) {
-        return dockerClientUtils.execute(client -> client.inspectContainerCmd(id).withSize(true).exec());
+    public ContainerInfo inspect(@PathVariable String id) throws DockerException, InterruptedException {
+        return dockerClient.inspectContainer(id);
     }
 
     @ApiOperation("查看Docker Containers内运行的进程列表")
     @GetMapping("/docker/container/{id}/top" + JSON_SUFFIX)
-    public TopContainerResponse containerProcesses(@PathVariable String id) {
-        return dockerClientUtils.execute(client -> client.topContainerCmd(id).exec());
+    public TopResults containerProcesses(@PathVariable String id, @RequestParam(required = false) String psArgs) throws DockerException, InterruptedException {
+        if (StringUtils.isNotBlank(psArgs)) {
+            return dockerClient.topContainer(id, psArgs);
+        }
+        return dockerClient.topContainer(id);
     }
 
     @ApiOperation("启动Docker Containers")
     @GetMapping("/docker/container/{id}/start" + JSON_SUFFIX)
-    public void start(@PathVariable String id) {
-        dockerClientUtils.execute(client -> client.startContainerCmd(id).exec());
+    public void start(@PathVariable String id) throws DockerException, InterruptedException {
+        dockerClient.startContainer(id);
     }
 
     @ApiOperation("停止Docker Containers")
     @GetMapping("/docker/container/{id}/stop" + JSON_SUFFIX)
-    public void stop(@PathVariable String id) {
-        dockerClientUtils.execute(client -> client.stopContainerCmd(id).exec());
+    public void stop(@PathVariable String id, @RequestParam(required = false, defaultValue = "0") Integer secondsToWaitBeforeKilling) throws DockerException, InterruptedException {
+        dockerClient.stopContainer(id, secondsToWaitBeforeKilling);
     }
 
     @ApiOperation("重新启动Docker Containers")
     @GetMapping("/docker/container/{id}/restart" + JSON_SUFFIX)
-    public void restart(@PathVariable String id) {
-        dockerClientUtils.execute(client -> client.restartContainerCmd(id).exec());
+    public void restart(@PathVariable String id, @RequestParam(required = false) Integer secondsToWaitBeforeRestart) throws DockerException, InterruptedException {
+        if (secondsToWaitBeforeRestart != null) {
+            dockerClient.restartContainer(id, secondsToWaitBeforeRestart);
+        } else {
+            dockerClient.restartContainer(id);
+        }
     }
 
     @ApiOperation("杀死Docker Containers")
     @GetMapping("/docker/container/{id}/kill" + JSON_SUFFIX)
-    public void kill(@PathVariable String id) {
-        dockerClientUtils.execute(client -> client.killContainerCmd(id).exec());
+    public void kill(@PathVariable String id) throws DockerException, InterruptedException {
+        dockerClient.killContainer(id);
     }
 
     @ApiOperation("暂停Docker Containers")
     @GetMapping("/docker/container/{id}/pause" + JSON_SUFFIX)
-    public void pause(@PathVariable String id) {
-        dockerClientUtils.execute(client -> client.pauseContainerCmd(id).exec());
+    public void pause(@PathVariable String id) throws DockerException, InterruptedException {
+        dockerClient.pauseContainer(id);
     }
 
     @ApiOperation("恢复Docker Containers(取消暂停)")
     @GetMapping("/docker/container/{id}/unpause" + JSON_SUFFIX)
-    public void unpause(@PathVariable String id) {
-        dockerClientUtils.execute(client -> client.unpauseContainerCmd(id).exec());
+    public void unpause(@PathVariable String id) throws DockerException, InterruptedException {
+        dockerClient.unpauseContainer(id);
     }
 
 //    @ApiOperation("更新Docker Containers")
@@ -101,19 +111,14 @@ public class DockerContainersController extends BaseController {
 
     @ApiOperation("重命名Docker Containers")
     @GetMapping("/docker/container/{id}/rename" + JSON_SUFFIX)
-    public void rename(@PathVariable String id, @RequestParam("newName") String newName) {
-        dockerClientUtils.execute(client -> client.renameContainerCmd(id).withName(newName).exec());
+    public void rename(@PathVariable String id, @RequestParam("newName") String newName) throws DockerException, InterruptedException {
+        dockerClient.renameContainer(id, newName);
     }
 
     @ApiOperation("删除Docker Containers")
     @GetMapping("/docker/container/{id}/remove" + JSON_SUFFIX)
-    public void remove(@PathVariable String id) {
-        dockerClientUtils.execute(client -> {
-            RemoveContainerCmd cmd = client.removeContainerCmd(id);
-            cmd.withForce(false);
-            cmd.withRemoveVolumes(true);
-            return cmd.exec();
-        });
+    public void remove(@PathVariable String id, ContainerRemoveReq req) throws DockerException, InterruptedException {
+        dockerClient.removeContainer(id, RemoveContainerParamConvert.convert(req));
     }
 
 //    @ApiOperation("读取Docker Containers中文件流")
@@ -127,95 +132,19 @@ public class DockerContainersController extends BaseController {
 //    }
 
     @ApiOperation("读取Docker Containers的日志")
-    @GetMapping("/docker/container/logs" + JSON_SUFFIX)
-    public CatContainerLogRes logs(@Validated CatContainerLogReq catContainerLogReq) throws IOException {
+    @GetMapping("/docker/container/logs/{id}" + JSON_SUFFIX)
+    public CatContainerLogRes logs(@PathVariable String id, @Validated CatContainerLogReq catContainerLogReq) throws DockerException, InterruptedException {
         final CatContainerLogRes catContainerLogRes = new CatContainerLogRes(null, false);
-        final StringBuilder logsText = new StringBuilder();
-        ResultCallback resultCallback = dockerClientUtils.execute(client -> client.logContainerCmd(catContainerLogReq.getContainerId())
-                .withFollowStream(false)
-                .withTimestamps(catContainerLogReq.getTimestamps())
-                .withStdOut(catContainerLogReq.getStdout())
-                .withStdErr(catContainerLogReq.getStderr())
-                .withSince(catContainerLogReq.getSince())
-                .withTail(catContainerLogReq.getTail())
-                .exec(new ResultCallback<Frame>() {
-                    private Closeable closeable;
-
-                    @Override
-                    public void onStart(Closeable closeable) {
-                        this.closeable = closeable;
-                    }
-
-                    @Override
-                    public void onNext(Frame object) {
-                        logsText.append(new String(object.getPayload()));
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        log.error("读取日志异常", throwable);
-                    }
-
-                    @Override
-                    public void onComplete() {
-                        catContainerLogRes.setComplete(true);
-                    }
-
-                    @Override
-                    public void close() throws IOException {
-                        if (closeable != null) {
-                            closeable.close();
-                        }
-                        catContainerLogRes.setComplete(true);
-                    }
-                })
-        );
-        while (!catContainerLogRes.isComplete()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                log.error("休眠中断", e);
-            }
+        try (LogStream logStream = dockerClient.logs(id, LogsParamConvert.convert(catContainerLogReq))) {
+            catContainerLogRes.setComplete(true);
+            catContainerLogRes.setLogText(logStream.readFully());
         }
-        resultCallback.close();
-        catContainerLogRes.setLogText(logsText.toString());
         return catContainerLogRes;
     }
 
-//    @ApiOperation("读取Docker Containers的日志")
-//    @GetMapping("/docker/container/logs" + JSON_SUFFIX)
-//    public Statistics stats(@PathVariable String id, ) {
-//        final Statistics[] statistics = new Statistics[1];
-//        dockerClientUtils.execute(client -> client.statsCmd("")
-//                .exec(new ResultCallback<Statistics>() {
-//                    @Override
-//                    public void onStart(Closeable closeable) {
-//
-//                    }
-//
-//                    @Override
-//                    public void onNext(Statistics object) {
-//                        statistics[0] = object;
-//                    }
-//
-//                    @Override
-//                    public void onError(Throwable throwable) {
-//
-//                    }
-//
-//                    @Override
-//                    public void onComplete() {
-//
-//                    }
-//
-//                    @Override
-//                    public void close() throws IOException {
-//
-//                    }
-//                }));
-//
-//        return statistics[0];
-//    }
-
-    // TODO 监控统计数据 /containers/{id}/stats
+    @ApiOperation("读取Docker 监控数据")
+    @GetMapping("/docker/container/stats/{id}" + JSON_SUFFIX)
+    public ContainerStats stats(@PathVariable String id) throws DockerException, InterruptedException {
+        return dockerClient.stats(id);
+    }
 }

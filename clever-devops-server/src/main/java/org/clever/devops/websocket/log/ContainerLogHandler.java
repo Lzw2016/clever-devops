@@ -5,7 +5,7 @@ import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.common.utils.validator.BaseValidatorUtils;
 import org.clever.common.utils.validator.ValidatorFactoryUtils;
-import org.clever.devops.dto.request.CatContainerLogReq;
+import org.clever.devops.dto.request.TailContainerLogReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.clever.devops.websocket.Handler;
@@ -38,25 +38,25 @@ public class ContainerLogHandler extends Handler {
             }
         }
         log.info("[ContainerLogHandler] 消息处理 -> {}", message.getPayload());
-        CatContainerLogReq catContainerLogReq = JacksonMapper.nonEmptyMapper().fromJson(message.getPayload(), CatContainerLogReq.class);
+        TailContainerLogReq tailContainerLogReq = JacksonMapper.nonEmptyMapper().fromJson(message.getPayload(), TailContainerLogReq.class);
         // 校验请求消息
-        if (catContainerLogReq == null) {
+        if (tailContainerLogReq == null) {
             sendErrorMessage(session, "请求消息格式错误");
             return;
         }
         // 校验参数 CatContainerLogReq 的完整性
         try {
-            BaseValidatorUtils.validateThrowException(ValidatorFactoryUtils.getHibernateValidator(), catContainerLogReq);
+            BaseValidatorUtils.validateThrowException(ValidatorFactoryUtils.getHibernateValidator(), tailContainerLogReq);
         } catch (ConstraintViolationException e) {
             log.info("请求参数校验失败", e);
             sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractPropertyAndMessageAsList(e, ",")));
         }
         // 新建查看日志任务
-        Task task = getTaskByTaskId(ContainerLogTask.getTaskId(catContainerLogReq));
+        Task task = getTaskByTaskId(ContainerLogTask.getTaskId(tailContainerLogReq));
         if (task != null) {
             task.addWebSocketSession(session);
         } else {
-            ContainerLogTask containerLogTask = ContainerLogTask.newContainerLogTask(session, catContainerLogReq);
+            ContainerLogTask containerLogTask = ContainerLogTask.newContainerLogTask(session, tailContainerLogReq);
             putAndStartTask(containerLogTask);
         }
     }
@@ -71,7 +71,7 @@ public class ContainerLogHandler extends Handler {
     protected void sendErrorMessage(WebSocketSession session, String errorMessage) {
         CatContainerLogRes catContainerLogRes = new CatContainerLogRes();
         catContainerLogRes.setLogText(errorMessage);
-        catContainerLogRes.setComplete(true);
+//        catContainerLogRes.setComplete(true);
         TextMessage textMessage = new TextMessage(JacksonMapper.nonEmptyMapper().toJson(catContainerLogRes));
         try {
             session.sendMessage(textMessage);

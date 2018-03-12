@@ -21,12 +21,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Slf4j
 public class Terminal implements Closeable {
 
+    private final Long startTime;
+    private final String taskId = UUID.randomUUID().toString();
     private PtyProcess process;
     private BufferedWriter outputWriter;
     private LinkedBlockingQueue<String> commandQueue = new LinkedBlockingQueue<>();
     private ConsoleOutput consoleOutput;
-    private final Long startTime;
-    private final String taskId = UUID.randomUUID().toString();
 
     /**
      * 初始化 Terminal
