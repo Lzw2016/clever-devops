@@ -4,6 +4,7 @@ import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.messages.swarm.*;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.codec.EncodeDecodeUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
@@ -106,5 +107,30 @@ public class Test03 {
         docker.createContainer(builder.build(), "test-001");
         docker.close();
         log.info("-=========================================");
+    }
+
+    @Test
+    public void t04() throws DockerException, InterruptedException {
+        DockerClient docker = newDockerClient();
+        Swarm swarm = docker.inspectSwarm();
+        docker.close();
+        log.info(" == {} ", swarm);
+    }
+
+    // Server
+    @Test
+    public void t05() throws DockerException, InterruptedException {
+        DockerClient docker = newDockerClient();
+        ServiceSpec serviceSpec = ServiceSpec.builder()
+                .addLabel("Test", "test")
+                .name("test")
+                .mode(ServiceMode.withReplicas(1))
+                .taskTemplate(TaskSpec.builder().containerSpec(ContainerSpec.builder().image("test:0.0.1").build()).build())
+                // .publishMode(PortConfig.PortConfigPublishMode.HOST)
+                .endpointSpec(EndpointSpec.builder().addPort(PortConfig.builder().targetPort(80).build()).build())
+                .build();
+        ServiceCreateResponse response = docker.createService(serviceSpec);
+        docker.close();
+        log.info(" == {} ", response);
     }
 }
