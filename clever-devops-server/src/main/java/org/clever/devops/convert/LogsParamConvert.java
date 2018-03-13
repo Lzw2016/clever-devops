@@ -2,6 +2,7 @@ package org.clever.devops.convert;
 
 import com.spotify.docker.client.DockerClient;
 import org.clever.devops.dto.request.CatContainerLogReq;
+import org.clever.devops.dto.request.TailContainerLogReq;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,4 +33,20 @@ public class LogsParamConvert {
         }
         return list.toArray(new DockerClient.LogsParam[list.size()]);
     }
+
+    public static DockerClient.LogsParam[] convert(TailContainerLogReq req) {
+        List<DockerClient.LogsParam> list = new ArrayList<>();
+        list.add(DockerClient.LogsParam.follow(true));
+        if (req.getTimestamps() != null && req.getTimestamps()) {
+            list.add(DockerClient.LogsParam.timestamps());
+        }
+        if (req.getStdout() != null && req.getStdout()) {
+            list.add(DockerClient.LogsParam.stdout());
+        }
+        if (req.getStderr() != null && req.getStderr()) {
+            list.add(DockerClient.LogsParam.stderr());
+        }
+        return list.toArray(new DockerClient.LogsParam[list.size()]);
+    }
+
 }

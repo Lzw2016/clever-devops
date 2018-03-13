@@ -1,9 +1,8 @@
 package org.clever.devops.websocket;
 
-import io.netty.util.internal.ConcurrentSet;
+import com.spotify.docker.client.DockerClient;
 import lombok.extern.slf4j.Slf4j;
 import org.clever.common.utils.mapper.JacksonMapper;
-import org.clever.devops.utils.DockerClientUtils;
 import org.clever.devops.utils.WebSocketCloseSessionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.socket.TextMessage;
@@ -13,6 +12,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * 作者： lzw<br/>
@@ -22,12 +22,12 @@ import java.util.Set;
 public abstract class Task extends Thread {
 
     @Autowired
-    protected DockerClientUtils dockerClientUtils;
+    protected DockerClient dockerClient;
 
     /**
      * 连接当前任务的Session集合
      */
-    protected ConcurrentSet<WebSocketSession> sessionSet = new ConcurrentSet<>();
+    protected CopyOnWriteArraySet<WebSocketSession> sessionSet = new CopyOnWriteArraySet<>();
 
     /**
      * 增加一个WebSocketSession到当前任务

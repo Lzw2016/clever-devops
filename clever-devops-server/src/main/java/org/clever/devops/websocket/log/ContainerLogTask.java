@@ -1,13 +1,12 @@
 package org.clever.devops.websocket.log;
 
-import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.LogContainerCmd;
-import com.github.dockerjava.api.model.Frame;
+import com.spotify.docker.client.LogStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
 import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.spring.SpringContextHolder;
+import org.clever.devops.convert.LogsParamConvert;
 import org.clever.devops.dto.request.TailContainerLogReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
 import org.clever.devops.websocket.Task;
@@ -18,8 +17,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
@@ -38,7 +35,7 @@ public class ContainerLogTask extends Task {
 
     private TailContainerLogReq tailContainerLogReq;
     private CatContainerLogRes catContainerLogRes = new CatContainerLogRes();
-    private ResultCallback resultCallback;
+    private LogStream logStream;
 
     /**
      * 返回当前任务ID
@@ -98,64 +95,37 @@ public class ContainerLogTask extends Task {
      */
     @Override
     public void run() {
-        resultCallback = dockerClientUtils.execute(client -> {
-            LogContainerCmd cmd = client.logContainerCmd(tailContainerLogReq.getContainerId());
-            cmd.withFollowStream(true);
-            cmd.withTimestamps(tailContainerLogReq.getTimestamps());
-            cmd.withStdErr(tailContainerLogReq.getStderr());
-            cmd.withStdOut(tailContainerLogReq.getStdout());
-//            cmd.withSince(tailContainerLogReq.getSince());
-//            cmd.withTail(tailContainerLogReq.getTail());
-            // cmd.withTailAll();
-            return cmd.exec(new ResultCallback<Frame>() {
-                private Closeable closeable;
-
-                @Override
-                public void onStart(Closeable closeable) {
-                    this.closeable = closeable;
+        try {
+            logStream = dockerClient.logs(tailContainerLogReq.getContainerId(), LogsParamConvert.convert(tailContainerLogReq));
+            logStream.forEachRemaining(logMessage -> {
+                int lineCount = 0;
+                // 设置日志 输出类型
+                catContainerLogRes.setStdType(logMessage.stream().name());
+                // 得到日志字符串 Charset.forName("UTF-8")
+                String logStr = new String(logMessage.content().array());
+                // 处理换行符
+                String[] logsArray = logStr.split("\r\n|\n");
+                int pollCount = logsBuffer.size() + logsArray.length - logsBufferMaxSize;
+                while (lineCount < pollCount) {
+                    // 移除
+                    logsBuffer.poll();
+                    // 添加
+                    logsBuffer.add(logsArray[lineCount]);
+                    sendLogText(Ansi.ansi().a(logsArray[lineCount]).newline().toString());
+                    lineCount++;
                 }
-
-                @Override
-                public void onNext(Frame object) {
-                    int i = 0;
-                    // 处理换行符
-                    String[] logsArray = new String(object.getPayload()).split("\r\n|\n");
-                    int pollCount = logsBuffer.size() + logsArray.length - logsBufferMaxSize;
-                    while (i < pollCount) {
-                        // 移除
-                        logsBuffer.poll();
-                        // 添加
-                        logsBuffer.add(logsArray[i]);
-                        sendLogText(Ansi.ansi().a(logsArray[i]).newline().toString());
-                        i++;
-                    }
-                    while (i < logsArray.length) {
-                        // 添加
-                        logsBuffer.add(logsArray[i]);
-                        sendLogText(Ansi.ansi().a(logsArray[i]).newline().toString());
-                        i++;
-                    }
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    log.warn("查看日志出现异常", throwable);
-                    sendCompleteMessage(Ansi.ansi().fgRed().newline().a("查看日志出现异常").newline().a(ExceptionUtils.getStackTraceAsString(throwable)).reset().toString());
-                }
-
-                @Override
-                public void onComplete() {
-                    sendCompleteMessage(Ansi.ansi().fgRed().newline().a("Docker容器已停止").newline().reset().toString());
-                }
-
-                @Override
-                public void close() throws IOException {
-                    if (closeable != null) {
-                        closeable.close();
-                    }
+                while (lineCount < logsArray.length) {
+                    // 添加
+                    logsBuffer.add(logsArray[lineCount]);
+                    sendLogText(Ansi.ansi().a(logsArray[lineCount]).newline().toString());
+                    lineCount++;
                 }
             });
-        });
+        } catch (Throwable e) {
+            destroyTask();
+            log.error("查看日志失败", e);
+            throw ExceptionUtils.unchecked(e);
+        }
         // 等待所有的连接关闭
         awaitAllSessionClose();
     }
@@ -164,9 +134,9 @@ public class ContainerLogTask extends Task {
      * 释放任务
      */
     @Override
-    public void destroyTask() throws IOException {
-        if (resultCallback != null) {
-            resultCallback.close();
+    public void destroyTask() {
+        if (logStream != null) {
+            logStream.close();
         }
         closeAllSession();
     }

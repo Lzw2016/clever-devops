@@ -1,7 +1,7 @@
 package org.clever.devops.controller;
 
-import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.pagehelper.PageInfo;
+import com.spotify.docker.client.messages.ContainerCreation;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
@@ -59,7 +59,7 @@ public class ImageConfigController extends BaseController {
 
     @ApiOperation("根据ImageConfig生成的镜像新增Docker容器")
     @PostMapping("/image_config/container/{id}" + JSON_SUFFIX)
-    public CreateContainerResponse createContainer(@PathVariable Long id) {
+    public ContainerCreation createContainer(@PathVariable Long id) {
         return imageConfigService.createContainer(id);
     }
 }

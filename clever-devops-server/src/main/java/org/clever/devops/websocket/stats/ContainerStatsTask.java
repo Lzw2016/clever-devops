@@ -1,8 +1,6 @@
 package org.clever.devops.websocket.stats;
 
-import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.StatsCmd;
-import com.github.dockerjava.api.model.Statistics;
+import com.spotify.docker.client.messages.ContainerStats;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
@@ -17,9 +15,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.io.Closeable;
-import java.io.IOException;
-
 /**
  * 作者： lzw<br/>
  * 创建时间：2018-01-07 22:15 <br/>
@@ -31,7 +26,6 @@ public class ContainerStatsTask extends Task {
 
     private ContainerStatsReq containerStatsReq;
     private ContainerStatsRes containerStatsRes = new ContainerStatsRes();
-    private ResultCallback resultCallback;
 
     /**
      * 返回当前任务ID
@@ -73,52 +67,24 @@ public class ContainerStatsTask extends Task {
      */
     @Override
     public void run() {
-        resultCallback = dockerClientUtils.execute(client -> {
-            StatsCmd statsCmd = client.statsCmd(containerStatsReq.getContainerId());
-            return statsCmd.exec(new ResultCallback<Statistics>() {
-                private Closeable closeable;
-
-                @Override
-                public void onStart(Closeable closeable) {
-                    this.closeable = closeable;
-                }
-
-                @Override
-                public void onNext(Statistics object) {
-                    sendStatistics(object);
-                }
-
-                @Override
-                public void onError(Throwable throwable) {
-                    log.warn("监控出现异常", throwable);
-                    sendCompleteMessage("\n监控出现异常\n" + ExceptionUtils.getStackTraceAsString(throwable));
-                }
-
-                @Override
-                public void onComplete() {
-                    sendCompleteMessage("\nDocker容器已停止\n");
-                }
-
-                @Override
-                public void close() throws IOException {
-                    if (closeable != null) {
-                        closeable.close();
-                    }
-                }
-            });
-        });
-        // 等待所有的连接关闭
-        awaitAllSessionClose();
+        while (sessionSet.size() > 0) {
+            try {
+                ContainerStats containerStats = dockerClient.stats(containerStatsReq.getContainerId());
+                sendStatistics(containerStats);
+                closeAllSession();
+            } catch (Throwable e) {
+                log.warn("监控出现异常", e);
+                sendCompleteMessage("\n监控出现异常\n" + ExceptionUtils.getStackTraceAsString(e));
+            }
+        }
+        destroyTask();
     }
 
     /**
      * 释放任务
      */
     @Override
-    public void destroyTask() throws IOException {
-        if (resultCallback != null) {
-            resultCallback.close();
-        }
+    public void destroyTask() {
         closeAllSession();
     }
 
@@ -133,10 +99,10 @@ public class ContainerStatsTask extends Task {
     /**
      * 发送监控数据到所有的客户端
      *
-     * @param statistics 监控数据
+     * @param containerStats 监控数据
      */
-    private void sendStatistics(Statistics statistics) {
-        containerStatsRes.setStats(statistics);
+    private void sendStatistics(ContainerStats containerStats) {
+        containerStatsRes.setStats(containerStats);
         containerStatsRes.setComplete(false);
         sendMessage(containerStatsRes);
     }

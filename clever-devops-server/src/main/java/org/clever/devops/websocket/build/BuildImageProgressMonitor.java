@@ -1,7 +1,7 @@
 package org.clever.devops.websocket.build;
 
-import com.github.dockerjava.api.model.BuildResponseItem;
-import com.github.dockerjava.core.command.BuildImageResultCallback;
+import com.spotify.docker.client.ProgressHandler;
+import com.spotify.docker.client.messages.ProgressMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.devops.websocket.ProgressMonitorToWebSocket;
@@ -10,6 +10,7 @@ import org.fusesource.jansi.Ansi;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 监控Docker构建镜像进度
@@ -18,7 +19,7 @@ import java.util.List;
  * 创建时间：2017-12-16 12:28 <br/>
  */
 @Slf4j
-public class BuildImageProgressMonitor extends BuildImageResultCallback {
+public class BuildImageProgressMonitor implements ProgressHandler {
 
     /**
      * 任务信息
@@ -39,10 +40,9 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
     }
 
     @Override
-    public void onNext(BuildResponseItem item) {
-        super.onNext(item);
+    public void progress(ProgressMessage message) {
         Ansi ansi = Ansi.ansi();
-        TaskInfo taskInfo = taskInfoList.stream().filter(task -> item.getId() != null && item.getId().equals(task.taskId)).findFirst().orElse(null);
+        TaskInfo taskInfo = taskInfoList.stream().filter(task -> message.id() != null && Objects.equals(message.id(), task.taskId)).findFirst().orElse(null);
         if (taskInfo != null) {
             // 覆盖之前对应的类容
             int upLine = currentRow - taskInfo.row;
@@ -56,7 +56,7 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
                 ansi.cursorToColumn(1);
             }
             ansi.eraseLine();
-            taskInfo = getTaskInfo(item, taskInfo);
+            taskInfo = getTaskInfo(message, taskInfo);
             if (taskInfo == null) {
                 return;
             }
@@ -68,7 +68,7 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
             }
         } else {
             // 新增一行
-            taskInfo = getTaskInfo(item, null);
+            taskInfo = getTaskInfo(message, null);
             if (taskInfo == null) {
                 return;
             }
@@ -88,22 +88,22 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
     }
 
     @SuppressWarnings("deprecation")
-    private TaskInfo getTaskInfo(BuildResponseItem item, TaskInfo taskInfo) {
-        String taskId = item.getId();
-        String stream = item.getStream();
+    private TaskInfo getTaskInfo(ProgressMessage message, TaskInfo taskInfo) {
+        String taskId = message.id();
+        String stream = message.stream();
         // id: status progress errorDetail
         StringBuilder progress = new StringBuilder();
-        if (item.getId() != null) {
-            progress.append(item.getId()).append(":");
+        if (message.id() != null) {
+            progress.append(message.id()).append(":");
         }
-        if (item.getStatus() != null) {
-            progress.append(" ").append(item.getStatus());
+        if (message.status() != null) {
+            progress.append(" ").append(message.status());
         }
-        if (item.getProgress() != null) {
-            progress.append(" ").append(item.getProgress());
+        if (message.progress() != null) {
+            progress.append(" ").append(message.progress());
         }
-        if (item.getErrorDetail() != null) {
-            progress.append(" ").append(item.getErrorDetail());
+        if (message.error() != null) {
+            progress.append(" ").append(message.error());
         }
         // 设置 TaskInfo
         if (stream != null) {
@@ -147,15 +147,5 @@ public class BuildImageProgressMonitor extends BuildImageResultCallback {
          * 显示行号 从1开始
          */
         private int row;
-
-        public TaskInfo() {
-        }
-
-        public TaskInfo(String stream, String taskId, String progress, int row) {
-            this.stream = stream;
-            this.taskId = taskId;
-            this.progress = progress;
-            this.row = row;
-        }
     }
 }

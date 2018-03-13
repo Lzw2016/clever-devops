@@ -3,11 +3,18 @@ package org.clever.devops;
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.Container;
+import com.spotify.docker.client.messages.*;
 import lombok.extern.slf4j.Slf4j;
+import org.clever.common.utils.codec.EncodeDecodeUtils;
+import org.clever.common.utils.mapper.JacksonMapper;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 作者： lzw<br/>
@@ -58,11 +65,46 @@ public class Test03 {
         docker.close();
     }
 
-//    @Test
-//    public void test03() {
-//        List<PortBinding> portBindings = new ArrayList<>();
-//        portBindings.add(new PortBinding(Ports.Binding.bindPortRange(10000, 99999), ExposedPort.tcp(1314)));
-//        CreateContainerResponse response = DockerClientService.createContainer("60815f5cb49d", "admin-demo:1.0.0-SNAPSHOT", portBindings, null);
-//        log.info(response.toString());
-//    }
+    @Test
+    public void test02() throws InterruptedException, DockerException, IOException {
+        DockerClient docker = newDockerClient();
+        Map<String, String> labels = new HashMap<>();
+        labels.put("flag", "true");
+        labels.put("q1", "v1");
+        String imageId = docker.build(Paths.get("G:\\CodeDownloadPath\\loan-mall"),
+                "test:0.0.1",
+                "./Dockerfile",
+                message -> log.info("{} | {} | {} | {}", message.id(), message.status(), message.progress(), message.stream()),
+                DockerClient.BuildParam.create("labels", EncodeDecodeUtils.urlEncode(JacksonMapper.nonEmptyMapper().toJson(labels)))
+        );
+        docker.close();
+        log.info("imageId={}", imageId);
+    }
+
+    @Test
+    public void t03() throws DockerException, InterruptedException {
+        DockerClient docker = newDockerClient();
+
+        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+//        final String[] ports = {"80"};
+//        for (String port : ports) {
+//            List<PortBinding> hostPorts = new ArrayList<>();
+//            hostPorts.add(PortBinding.of("0.0.0.0", port)); // 192.168.159.131
+//            portBindings.put(port, hostPorts);
+//        }
+
+        List<PortBinding> randomPort = new ArrayList<>();
+        randomPort.add(PortBinding.randomPort("0.0.0.0"));
+        portBindings.put("80", randomPort);
+        HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
+
+        ContainerConfig.Builder builder = ContainerConfig.builder();
+        builder.image("test:0.0.1");
+        builder.hostConfig(hostConfig);
+        builder.exposedPorts("80");
+//        builder.exposedPorts("9066/tcp");
+        docker.createContainer(builder.build(), "test-001");
+        docker.close();
+        log.info("-=========================================");
+    }
 }

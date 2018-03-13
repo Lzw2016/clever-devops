@@ -1,8 +1,8 @@
 package org.clever.devops.service;
 
-import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.spotify.docker.client.messages.ContainerCreation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
@@ -161,7 +161,7 @@ public class ImageConfigService extends BaseService {
     /**
      * 根据ImageConfig生成的镜像新增Docker容器
      */
-    public CreateContainerResponse createContainer(Long id) {
+    public ContainerCreation createContainer(Long id) {
         ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(id);
         if (imageConfig == null) {
             throw new BusinessException(String.format("Docker镜像配置不存在，ID=%1$s", id));

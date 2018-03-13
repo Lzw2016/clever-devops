@@ -19,11 +19,12 @@ public class CatContainerLogRes extends BaseResponse {
      */
     private String logText;
 
-
     /**
      * 处理完成要求客户端主动关闭连接
      */
     private boolean complete = false;
+
+    private String stdType;
 
     public CatContainerLogRes() {
     }

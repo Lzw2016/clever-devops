@@ -1,23 +1,22 @@
 package org.clever.devops.utils;
 
-import com.github.dockerjava.api.command.BuildImageCmd;
-import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.Ports;
-import com.github.dockerjava.core.command.BuildImageResultCallback;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.ProgressHandler;
+import com.spotify.docker.client.messages.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.clever.common.model.exception.BusinessException;
 import org.clever.common.utils.DateTimeUtils;
+import org.clever.common.utils.codec.EncodeDecodeUtils;
+import org.clever.common.utils.exception.ExceptionUtils;
+import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.entity.CodeRepository;
 import org.clever.devops.entity.ImageConfig;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -30,6 +29,11 @@ import java.util.*;
 public class ImageConfigUtils {
 
     // private static final GlobalConfig GLOBAL_CONFIG = SpringContextHolder.getBean(GlobalConfig.class);
+
+    /**
+     * 使用当前 管理工具构建的镜像 标识Label
+     */
+    private static final String DEVOPS_FLAG = "DevopsFlag";
 
     /**
      * 镜像标签 项目名称
@@ -64,19 +68,21 @@ public class ImageConfigUtils {
      */
     private static final String IMAGE_LABEL_SERVER_URL = "ServerUrl";
 
-    private static final DockerClientUtils dockerClientUtils = SpringContextHolder.getBean(DockerClientUtils.class);
+    private static final DockerClient DOCKER_CLIENT = SpringContextHolder.getBean(DockerClient.class);
 
     /**
      * 构建 Docker 镜像
      *
-     * @param codeRepository 代码仓库信息
-     * @param imageConfig    Docker镜像配置
-     * @param callback       构建进度监控回调
+     * @param codeRepository  代码仓库信息
+     * @param imageConfig     Docker镜像配置
+     * @param progressHandler 构建进度监控回调
      * @return 返回 ImageId
      */
-    public static String buildImage(CodeRepository codeRepository, ImageConfig imageConfig, BuildImageResultCallback callback) {
+    public static String buildImage(CodeRepository codeRepository, ImageConfig imageConfig, ProgressHandler progressHandler) {
+        String imageId;
         // 构建镜像 - 整理参数
         Map<String, String> labels = new HashMap<>();
+        labels.put(DEVOPS_FLAG, "true");
         labels.put(IMAGE_LABEL_PROJECT_NAME, codeRepository.getProjectName());
         labels.put(IMAGE_LABEL_LANGUAGE, codeRepository.getLanguage());
         labels.put(IMAGE_LABEL_REPOSITORY_URL, codeRepository.getRepositoryUrl());
@@ -87,32 +93,37 @@ public class ImageConfigUtils {
         labels.put(IMAGE_LABEL_SERVER_URL, imageConfig.getServerUrl());
         String branch = imageConfig.getBranch().substring(imageConfig.getBranch().lastIndexOf('/') + 1, imageConfig.getBranch().length());
         String imageName = String.format("%1$s:%2$s", codeRepository.getProjectName(), branch);
-        Set<String> tags = new HashSet<>();
-        tags.add(imageName);
         String dockerfilePath = FilenameUtils.concat(imageConfig.getCodeDownloadPath(), imageConfig.getDockerFilePath());
         File dockerfile = new File(dockerfilePath);
         if (!dockerfile.exists() || !dockerfile.isFile()) {
             throw new BusinessException(String.format("Dockerfile文件[%1$s]不存在", dockerfilePath));
         }
-        return dockerClientUtils.execute(client -> {
+        // 构建镜像
+        try {
             // 删除之前的镜像
-            if (StringUtils.isNotBlank(imageConfig.getImageId())) {
-                List<Image> imageList = client.listImagesCmd().withImageNameFilter(imageName).exec();
-                imageList.addAll(client.listImagesCmd().withDanglingFilter(true).exec());
-                for (Image image : imageList) {
-                    // Force 删除镜像，即使它被停止的容器使用或被标记
-                    // NoPrune 不删除未被标记的父镜像
-                    client.removeImageCmd(image.getId()).withForce(true).withNoPrune(false).exec();
-                    log.info("删除Docker image [{}]", image.getId());
-                }
+            List<Image> imageList = DOCKER_CLIENT.listImages(DockerClient.ListImagesParam.byName(imageName));
+            imageList.addAll(DOCKER_CLIENT.listImages(DockerClient.ListImagesParam.danglingImages(true)));
+            for (Image image : imageList) {
+                // Force 删除镜像，即使它被停止的容器使用或被标记
+                // NoPrune 不删除未被标记的父镜像
+                DOCKER_CLIENT.removeImage(image.id(), true, false);
+                String ServerUrl = image.labels() == null ? null : Objects.requireNonNull(image.labels()).get(IMAGE_LABEL_SERVER_URL);
+                log.info("删除Docker image [id={}] [ServerUrl=]", image.id(), ServerUrl);
             }
-            // 构建镜像
-            BuildImageCmd buildImageCmd = client.buildImageCmd();
-            buildImageCmd.withDockerfile(dockerfile);
-            buildImageCmd.withLabels(labels);
-            buildImageCmd.withTags(tags);
-            return buildImageCmd.exec(callback).awaitImageId();
-        });
+            // 构建镜像 ProgressHandler
+            imageId = DOCKER_CLIENT.build(Paths.get(imageConfig.getCodeDownloadPath()),
+                    imageName,
+                    imageConfig.getDockerFilePath(),
+                    progressHandler,
+                    DockerClient.BuildParam.create("labels", EncodeDecodeUtils.urlEncode(JacksonMapper.nonEmptyMapper().toJson(labels))));
+        } catch (Throwable e) {
+            log.error("构建镜像失败", e);
+            throw ExceptionUtils.unchecked(e);
+        }
+        if (imageId == null) {
+            throw new BusinessException("构建镜像失败");
+        }
+        return imageId;
     }
 
     /**
@@ -121,22 +132,32 @@ public class ImageConfigUtils {
      * @param imageConfig Docker镜像配置
      * @return 返回 ImageId
      */
-    public static CreateContainerResponse createContainer(final ImageConfig imageConfig) {
+    public static ContainerCreation createContainer(final ImageConfig imageConfig) {
         String image = imageConfig.getImageId();
         String name = String.format("%1$s-%2$s", imageConfig.getServerUrl(), DateTimeUtils.formatToString(new Date(), "yyyyMMddHHmmss"));
-        return dockerClientUtils.execute(client -> {
-            CreateContainerCmd createContainerCmd = client.createContainerCmd(image);
-            createContainerCmd.withName(name);
-            if (StringUtils.isNotBlank(imageConfig.getServerPorts())) {
-                Ports ports = new Ports();
-                String[] portArray = imageConfig.getServerPorts().split(",");
-                for (String port : portArray) {
-                    ports.bind(new ExposedPort(NumberUtils.toInt(port)), null);
+        ContainerConfig.Builder builder = ContainerConfig.builder();
+        builder.image(image);
+        if (StringUtils.isNotBlank(imageConfig.getServerPorts())) {
+            // 设置端口映射
+            String[] portArray = imageConfig.getServerPorts().split(",");
+            final Map<String, List<PortBinding>> portBindings = new HashMap<>();
+            for (String port : portArray) {
+                if (StringUtils.isBlank(port)) {
+                    continue;
                 }
-                createContainerCmd.withPortBindings(ports);
-                createContainerCmd.withPublishAllPorts(true);
+                List<PortBinding> randomPort = new ArrayList<>();
+                randomPort.add(PortBinding.randomPort("0.0.0.0"));
+                portBindings.put(port, randomPort);
             }
-            return createContainerCmd.exec();
-        });
+            HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
+            builder.hostConfig(hostConfig);
+            builder.exposedPorts(portArray);
+        }
+        try {
+            return DOCKER_CLIENT.createContainer(builder.build(), name);
+        } catch (Throwable e) {
+            log.error("创建容器失败", e);
+            throw ExceptionUtils.unchecked(e);
+        }
     }
 }
