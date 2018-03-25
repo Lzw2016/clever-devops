@@ -12,6 +12,7 @@ import org.clever.common.utils.codec.EncodeDecodeUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
@@ -167,6 +168,39 @@ public class Test03 {
         log.info(" == {} close");
 //        log.info(" == {}", logStream.readFully());
         logStream.close();
+        docker.close();
+        log.info(" == {} OK");
+    }
+
+    @Test
+    public void t07() throws DockerException, InterruptedException, IOException {
+        DockerClient docker = newDockerClient();
+        LogStream logStream = docker.logs(
+                "3ed2b5910e9953ebeec5a9c8bdb1c493b1b9c532eeb7b52793f9003cf2a2d0c6",
+                DockerClient.LogsParam.follow(true),
+                DockerClient.LogsParam.stdout(true),
+                DockerClient.LogsParam.stderr(false)
+        );
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024 * 512);
+        new Thread(() -> {
+            try {
+                logStream.attach(outputStream, null);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }).start();
+        Thread.sleep(1000 * 3);
+        log.info(" == {}", new String(outputStream.toByteArray()));
+        try {
+            outputStream.close();
+        } catch (Throwable e) {
+            log.info(" == {} outputStream.close", e);
+        }
+//        try {
+//            logStream.close();
+//        } catch (Throwable e) {
+//            log.info(" == {} logStream.close()", e);
+//        }
         docker.close();
         log.info(" == {} OK");
     }
