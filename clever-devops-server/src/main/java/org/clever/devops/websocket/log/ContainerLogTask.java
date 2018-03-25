@@ -1,5 +1,6 @@
 package org.clever.devops.websocket.log;
 
+import com.spotify.docker.client.LogMessage;
 import com.spotify.docker.client.LogStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
@@ -30,7 +32,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 @Slf4j
 public class ContainerLogTask extends Task {
 
-    private static final int logsBufferMaxSize = 10000;
+    private static final int logsBufferMaxSize = 1000;
     private ArrayBlockingQueue<String> logsBuffer = new ArrayBlockingQueue<>(logsBufferMaxSize);
 
     private TailContainerLogReq tailContainerLogReq;
@@ -96,13 +98,17 @@ public class ContainerLogTask extends Task {
     @Override
     public void run() {
         try {
-            logStream = dockerClient.logs(tailContainerLogReq.getContainerId(), LogsParamConvert.convert(tailContainerLogReq));
-            logStream.forEachRemaining(logMessage -> {
+            logStream = dockerClient.logs(tailContainerLogReq.getContainerId(), LogsParamConvert.convert(tailContainerLogReq, logsBufferMaxSize));
+            while (logStream.hasNext()) {
+                LogMessage logMessage = logStream.next();
                 int lineCount = 0;
                 // 设置日志 输出类型
                 catContainerLogRes.setStdType(logMessage.stream().name());
                 // 得到日志字符串 Charset.forName("UTF-8")
-                String logStr = new String(logMessage.content().array());
+                ByteBuffer byteBuffer = logMessage.content();
+                byte[] bytes = new byte[byteBuffer.remaining()];
+                byteBuffer.get(bytes);
+                String logStr = new String(bytes);
                 // 处理换行符
                 String[] logsArray = logStr.split("\r\n|\n");
                 int pollCount = logsBuffer.size() + logsArray.length - logsBufferMaxSize;
@@ -120,11 +126,17 @@ public class ContainerLogTask extends Task {
                     sendLogText(Ansi.ansi().a(logsArray[lineCount]).newline().toString());
                     lineCount++;
                 }
-            });
+                // 移除已经关闭了的连接
+                removeCloseSession();
+                if (getWebSocketSessionSize() <= 0) {
+                    break;
+                }
+            }
         } catch (Throwable e) {
-            destroyTask();
             log.error("查看日志失败", e);
             throw ExceptionUtils.unchecked(e);
+        } finally {
+            destroyTask();
         }
         // 等待所有的连接关闭
         awaitAllSessionClose();
@@ -136,7 +148,8 @@ public class ContainerLogTask extends Task {
     @Override
     public void destroyTask() {
         if (logStream != null) {
-            logStream.close();
+            // TODO 关闭方法有问题 执行不完
+            new Thread(() -> logStream.close()).start();
         }
         closeAllSession();
     }

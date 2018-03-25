@@ -5,6 +5,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.clever.common.model.request.BaseRequest;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.Range;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * 作者： lzw<br/>

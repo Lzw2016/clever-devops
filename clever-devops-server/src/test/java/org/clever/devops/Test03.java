@@ -2,6 +2,8 @@ package org.clever.devops;
 
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LogMessage;
+import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.*;
 import com.spotify.docker.client.messages.swarm.*;
@@ -11,6 +13,7 @@ import org.clever.common.utils.mapper.JacksonMapper;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +33,7 @@ public class Test03 {
                 .uri("http://192.168.159.131:2375")
 //                .dockerCertificates()
 //                .registryAuthSupplier()
-//                .apiVersion("1.33")
+                .apiVersion("v1.34")
 //                .header()
                 .connectionPoolSize(100)
                 .connectTimeoutMillis(1000 * 3)
@@ -132,5 +135,39 @@ public class Test03 {
         ServiceCreateResponse response = docker.createService(serviceSpec);
         docker.close();
         log.info(" == {} ", response);
+    }
+
+    @Test
+    public void t06() throws DockerException, InterruptedException {
+        DockerClient docker = newDockerClient();
+        LogStream logStream = docker.logs(
+                "3ed2b5910e9953ebeec5a9c8bdb1c493b1b9c532eeb7b52793f9003cf2a2d0c6",
+                DockerClient.LogsParam.follow(true),
+                DockerClient.LogsParam.stdout(true),
+                DockerClient.LogsParam.stderr(false)
+        );
+        int i = 0;
+        while (logStream.hasNext()) {
+            i++;
+            LogMessage logMessage = logStream.next();
+            ByteBuffer byteBuffer = logMessage.content();
+            byte[] bytes = new byte[byteBuffer.remaining()];
+            byteBuffer.get(bytes);
+
+//            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(byteBuffer.capacity());
+//            while (byteBuffer.hasRemaining()) {
+//                outputStream.write(byteBuffer.get());
+//            }
+            String logStr = new String(bytes);
+            System.out.print(logStr);
+            if (i >= 10) {
+                break;
+            }
+        }
+        log.info(" == {} close");
+//        log.info(" == {}", logStream.readFully());
+        logStream.close();
+        docker.close();
+        log.info(" == {} OK");
     }
 }

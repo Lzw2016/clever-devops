@@ -34,7 +34,7 @@ public class LogsParamConvert {
         return list.toArray(new DockerClient.LogsParam[list.size()]);
     }
 
-    public static DockerClient.LogsParam[] convert(TailContainerLogReq req) {
+    public static DockerClient.LogsParam[] convert(TailContainerLogReq req, int tail) {
         List<DockerClient.LogsParam> list = new ArrayList<>();
         list.add(DockerClient.LogsParam.follow(true));
         if (req.getTimestamps() != null && req.getTimestamps()) {
@@ -46,6 +46,8 @@ public class LogsParamConvert {
         if (req.getStderr() != null && req.getStderr()) {
             list.add(DockerClient.LogsParam.stderr());
         }
+        // tail 输出的行数
+        list.add(DockerClient.LogsParam.tail(tail));
         return list.toArray(new DockerClient.LogsParam[list.size()]);
     }
 
