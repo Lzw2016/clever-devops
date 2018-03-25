@@ -25,6 +25,7 @@ import java.util.Map;
  * 作者： lzw<br/>
  * 创建时间：2018-03-11 20:24 <br/>
  */
+@SuppressWarnings("Duplicates")
 @Slf4j
 public class Test03 {
 
@@ -173,7 +174,7 @@ public class Test03 {
     }
 
     @Test
-    public void t07() throws DockerException, InterruptedException, IOException {
+    public void t07() throws DockerException, InterruptedException {
         DockerClient docker = newDockerClient();
         LogStream logStream = docker.logs(
                 "3ed2b5910e9953ebeec5a9c8bdb1c493b1b9c532eeb7b52793f9003cf2a2d0c6",
@@ -196,12 +197,41 @@ public class Test03 {
         } catch (Throwable e) {
             log.info(" == {} outputStream.close", e);
         }
-//        try {
-//            logStream.close();
-//        } catch (Throwable e) {
-//            log.info(" == {} logStream.close()", e);
-//        }
+        try {
+            logStream.close();
+        } catch (Throwable e) {
+            log.info(" == {} logStream.close()", e);
+        }
         docker.close();
+        log.info(" == {} OK");
+    }
+
+    @Test
+    public void t08() throws DockerException, InterruptedException {
+        DockerClient docker = newDockerClient();
+        LogStream logStream = docker.logs(
+                "3ed2b5910e9953ebeec5a9c8bdb1c493b1b9c532eeb7b52793f9003cf2a2d0c6",
+                DockerClient.LogsParam.follow(true),
+                DockerClient.LogsParam.stdout(true),
+                DockerClient.LogsParam.stderr(false)
+        );
+        int i = 0;
+        while (logStream.hasNext()) {
+            i++;
+            LogMessage logMessage = logStream.next();
+            ByteBuffer byteBuffer = logMessage.content();
+            byte[] bytes = new byte[byteBuffer.remaining()];
+            byteBuffer.get(bytes);
+            String logStr = new String(bytes);
+            System.out.print(logStr);
+            if (i >= 100) {
+                break;
+            }
+        }
+        log.info(" == {} close");
+        docker.close();
+        logStream.close();
+        Thread.sleep(1000 * 10);
         log.info(" == {} OK");
     }
 }
