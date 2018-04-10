@@ -291,11 +291,14 @@ public class BuildImageTask extends Task {
         updateImageConfig.setId(imageConfig.getId());
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
         // 构建镜像
-        String imageId = ImageConfigUtils.buildImage(codeRepository, imageConfig, new BuildImageProgressMonitor(this::sendLogText));
+        String branch = imageConfig.getBranch().substring(imageConfig.getBranch().lastIndexOf('/') + 1, imageConfig.getBranch().length());
+        String imageName = String.format("%1$s:%2$s", codeRepository.getProjectName(), branch);
+        String imageId = ImageConfigUtils.buildImage(imageName, codeRepository, imageConfig, new BuildImageProgressMonitor(this::sendLogText));
         // 更新 -- ImageConfig 镜像ID
         updateImageConfig = new ImageConfig();
         updateImageConfig.setId(imageConfig.getId());
         updateImageConfig.setImageId(imageId);
+        updateImageConfig.setImageName(imageName);
         updateImageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
         imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());

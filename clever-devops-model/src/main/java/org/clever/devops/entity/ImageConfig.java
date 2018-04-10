@@ -117,6 +117,11 @@ public class ImageConfig extends DataEntity {
     private String imageId;
 
     /**
+     * Docker镜像名称
+     */
+    private String imageName;
+
+    /**
      * 镜像开始构建时间
      */
     private Date buildStartTime;

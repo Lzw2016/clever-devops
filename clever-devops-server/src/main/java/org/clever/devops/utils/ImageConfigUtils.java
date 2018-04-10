@@ -73,12 +73,13 @@ public class ImageConfigUtils {
     /**
      * 构建 Docker 镜像
      *
+     * @param imageName       镜像名称
      * @param codeRepository  代码仓库信息
      * @param imageConfig     Docker镜像配置
      * @param progressHandler 构建进度监控回调
      * @return 返回 ImageId
      */
-    public static String buildImage(CodeRepository codeRepository, ImageConfig imageConfig, ProgressHandler progressHandler) {
+    public static String buildImage(String imageName, CodeRepository codeRepository, ImageConfig imageConfig, ProgressHandler progressHandler) {
         String imageId;
         // 构建镜像 - 整理参数
         Map<String, String> labels = new HashMap<>();
@@ -91,8 +92,6 @@ public class ImageConfigUtils {
         labels.put(IMAGE_LABEL_COMMIT_ID, imageConfig.getCommitId());
         labels.put(IMAGE_LABEL_SERVER_PORTS, imageConfig.getServerPorts());
         labels.put(IMAGE_LABEL_SERVER_URL, imageConfig.getServerUrl());
-        String branch = imageConfig.getBranch().substring(imageConfig.getBranch().lastIndexOf('/') + 1, imageConfig.getBranch().length());
-        String imageName = String.format("%1$s:%2$s", codeRepository.getProjectName(), branch);
         String dockerfilePath = FilenameUtils.concat(imageConfig.getCodeDownloadPath(), imageConfig.getDockerFilePath());
         File dockerfile = new File(dockerfilePath);
         if (!dockerfile.exists() || !dockerfile.isFile()) {

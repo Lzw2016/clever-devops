@@ -4,8 +4,9 @@
 <!--suppress SqlDialectInspection -->
 <mapper namespace="org.clever.devops.mapper.QueryMapper">
 
-    <resultMap id="ImageConfigQueryResMap" type="org.clever.devops.dto.response.ImageConfigQueryRes" autoMapping="true"/>
-    <select id="findImageConfig" resultMap="ImageConfigQueryResMap">
+    <select id="findImageConfig"
+            resultType="org.clever.devops.dto.response.ImageConfigQueryRes"
+            parameterType="org.clever.devops.dto.request.ImageConfigQueryReq">
         SELECT
         b.project_name,
         b.language,
@@ -54,5 +55,4 @@
         </if>
         ORDER BY a.server_url, a.create_date DESC
     </select>
-
 </mapper>
