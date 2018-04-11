@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
 import org.clever.common.server.service.BaseService;
+import org.clever.common.utils.DateTimeUtils;
 import org.clever.common.utils.mapper.BeanMapper;
 import org.clever.devops.dto.request.ImageConfigAddReq;
 import org.clever.devops.dto.request.ImageConfigQueryReq;
@@ -169,6 +170,7 @@ public class ImageConfigService extends BaseService {
         if (StringUtils.isBlank(imageConfig.getImageId())) {
             throw new BusinessException("Docker镜像配置从未构建成功过，请先构建Docker镜像");
         }
-        return ImageConfigUtils.createContainer(imageConfig);
+        String containerName = String.format("%1$s-%2$s", imageConfig.getServerUrl(), DateTimeUtils.formatToString(new Date(), "yyyyMMddHHmmss"));
+        return ImageConfigUtils.createContainer(containerName, imageConfig);
     }
 }

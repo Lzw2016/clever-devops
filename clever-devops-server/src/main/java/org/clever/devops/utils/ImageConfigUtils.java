@@ -2,12 +2,14 @@ package org.clever.devops.utils;
 
 import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.ProgressHandler;
-import com.spotify.docker.client.messages.*;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.PortBinding;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
-import org.clever.common.utils.DateTimeUtils;
 import org.clever.common.utils.codec.EncodeDecodeUtils;
 import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.mapper.JacksonMapper;
@@ -17,7 +19,10 @@ import org.clever.devops.entity.ImageConfig;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 构建镜像工具类
@@ -99,17 +104,6 @@ public class ImageConfigUtils {
         }
         // 构建镜像
         try {
-            // 删除之前的镜像
-            List<Image> imageList = DOCKER_CLIENT.listImages(DockerClient.ListImagesParam.byName(imageName));
-            imageList.addAll(DOCKER_CLIENT.listImages(DockerClient.ListImagesParam.danglingImages(true)));
-            for (Image image : imageList) {
-                // Force 删除镜像，即使它被停止的容器使用或被标记
-                // NoPrune 不删除未被标记的父镜像
-                DOCKER_CLIENT.removeImage(image.id(), true, false);
-                String ServerUrl = image.labels() == null ? null : Objects.requireNonNull(image.labels()).get(IMAGE_LABEL_SERVER_URL);
-                log.info("删除Docker image [id={}] [ServerUrl=]", image.id(), ServerUrl);
-            }
-            // 构建镜像 ProgressHandler
             imageId = DOCKER_CLIENT.build(Paths.get(imageConfig.getCodeDownloadPath()),
                     imageName,
                     imageConfig.getDockerFilePath(),
@@ -118,6 +112,18 @@ public class ImageConfigUtils {
         } catch (Throwable e) {
             log.error("构建镜像失败", e);
             throw ExceptionUtils.unchecked(e);
+        }
+        // 删除之前的镜像
+        if (StringUtils.isNotBlank(imageConfig.getImageId())) {
+            try {
+                // Force 删除镜像，即使它被停止的容器使用或被标记
+                // NoPrune 不删除未被标记的父镜像
+                DOCKER_CLIENT.removeImage(imageConfig.getImageId(), true, false);
+                log.info("删除Docker Image [id={}] [ServerUrl={}]", imageConfig.getImageId(), imageConfig.getServerUrl());
+            } catch (Throwable ignore) {
+                log.info("删除Docker Image失败 image [id={}] [ServerUrl={}]", imageConfig.getImageId(), imageConfig.getServerUrl());
+                log.info("删除Docker Image失败", ignore);
+            }
         }
         if (imageId == null) {
             throw new BusinessException("构建镜像失败");
@@ -128,12 +134,12 @@ public class ImageConfigUtils {
     /**
      * 新建一个 Docker 容器
      *
-     * @param imageConfig Docker镜像配置
+     * @param containerName Docker容器名称
+     * @param imageConfig   Docker镜像配置
      * @return 返回 ImageId
      */
-    public static ContainerCreation createContainer(final ImageConfig imageConfig) {
-        String image = imageConfig.getImageId();
-        String name = String.format("%1$s-%2$s", imageConfig.getServerUrl(), DateTimeUtils.formatToString(new Date(), "yyyyMMddHHmmss"));
+    public static ContainerCreation createContainer(String containerName, final ImageConfig imageConfig) {
+        String image = imageConfig.getImageName();
         ContainerConfig.Builder builder = ContainerConfig.builder();
         builder.image(image);
         if (StringUtils.isNotBlank(imageConfig.getServerPorts())) {
@@ -153,7 +159,7 @@ public class ImageConfigUtils {
             builder.exposedPorts(portArray);
         }
         try {
-            return DOCKER_CLIENT.createContainer(builder.build(), name);
+            return DOCKER_CLIENT.createContainer(builder.build(), containerName);
         } catch (Throwable e) {
             log.error("创建容器失败", e);
             throw ExceptionUtils.unchecked(e);

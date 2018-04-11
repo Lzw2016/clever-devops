@@ -10,7 +10,9 @@ import org.clever.devops.config.GlobalConfig;
 import org.clever.devops.dto.request.BuildImageReq;
 import org.clever.devops.dto.response.BuildImageRes;
 import org.clever.devops.entity.CodeRepository;
+import org.clever.devops.entity.ImageBuildLog;
 import org.clever.devops.entity.ImageConfig;
+import org.clever.devops.mapper.ImageBuildLogMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
 import org.clever.devops.utils.CodeRepositoryUtils;
 import org.clever.devops.utils.ConsoleOutput;
@@ -43,6 +45,8 @@ public class BuildImageTask extends Task {
     private GlobalConfig globalConfig;
     @Autowired
     private ImageConfigMapper imageConfigMapper;
+    @Autowired
+    private ImageBuildLogMapper imageBuildLogMapper;
 
     /**
      * 记录所有输出日志
@@ -53,6 +57,7 @@ public class BuildImageTask extends Task {
     private BuildImageRes buildImageRes = new BuildImageRes();
     private CodeRepository codeRepository;
     private ImageConfig imageConfig;
+    private ImageBuildLog imageBuildLog;
 
     /**
      * 返回当前任务ID
@@ -93,6 +98,23 @@ public class BuildImageTask extends Task {
         this.imageConfig = imageConfig;
         // 构建响应数据
         buildImageRes.setImageConfigId(imageConfig.getId());
+        // 初始化构建日志
+        imageBuildLog = new ImageBuildLog();
+        imageBuildLog.setRepositoryId(this.codeRepository.getId());
+        imageBuildLog.setImageConfigId(this.imageConfig.getId());
+        imageBuildLog.setProjectName(this.codeRepository.getProjectName());
+        imageBuildLog.setRepositoryUrl(this.codeRepository.getRepositoryUrl());
+        imageBuildLog.setBranch(this.imageConfig.getBranch());
+        imageBuildLog.setBuildType(this.imageConfig.getBuildType());
+        imageBuildLog.setBuildCmd(this.imageConfig.getBuildCmd());
+        imageBuildLog.setDockerFilePath(this.imageConfig.getDockerFilePath());
+        imageBuildLog.setServerPorts(this.imageConfig.getServerPorts());
+        imageBuildLog.setServerUrl(this.imageConfig.getServerUrl());
+        imageBuildLog.setServerCount(this.imageConfig.getServerCount());
+        imageBuildLog.setBuildState(ImageConfig.buildState_0);
+        imageBuildLog.setBuildStartTime(new Date());
+        imageBuildLog.setCreateDate(new Date());
+        imageBuildLog.setCreateBy("");
     }
 
     /**
@@ -145,6 +167,10 @@ public class BuildImageTask extends Task {
         try {
             // 设置 -- 开始构建时的时间戳
             buildImageRes.setStartTime(System.currentTimeMillis());
+            // 保存构建日志
+            imageBuildLog.setBuildState(ImageConfig.buildState_1);
+            imageBuildLog.setBuildStartTime(new Date());
+            imageBuildLogMapper.insertSelective(imageBuildLog);
             // 更新 ImageConfig 状态
             ImageConfig updateImageConfig = new ImageConfig();
             updateImageConfig.setId(imageConfig.getId());
@@ -191,6 +217,14 @@ public class BuildImageTask extends Task {
             updateImageConfig.setBuildLogs(allLogText.toString());
             updateImageConfig.setUpdateDate(new Date());
             imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+            // 更新构建日志
+            ImageBuildLog updateImageBuildLog = new ImageBuildLog();
+            updateImageBuildLog.setId(imageBuildLog.getId());
+            updateImageBuildLog.setBuildState(buildState);
+            updateImageBuildLog.setBuildEndTime(new Date());
+            updateImageBuildLog.setBuildLogs(allLogText.toString());
+            updateImageBuildLog.setUpdateDate(new Date());
+            imageBuildLogMapper.updateByPrimaryKeySelective(updateImageBuildLog);
         }
         if (buildImageReq.isStartContainer()) {
             // TODO 新建容器 启动容器
@@ -246,6 +280,14 @@ public class BuildImageTask extends Task {
         CodeRepositoryUtils.downloadCode(codeRepository, imageConfig, this::sendLogText);
         sendLogText(Ansi.ansi().newline().a("[1.下载代码] 完成").toString(), Ansi.Color.GREEN);
         imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
+        // 更新构建日志
+        ImageBuildLog updateImageBuildLog = new ImageBuildLog();
+        updateImageBuildLog.setId(imageBuildLog.getId());
+        updateImageBuildLog.setCodeDownloadPath(imageConfig.getCodeDownloadPath());
+        updateImageBuildLog.setCommitId(imageConfig.getCommitId());
+        updateImageBuildLog.setBuildState(ImageConfig.buildState_2);
+        updateImageBuildLog.setUpdateDate(new Date());
+        imageBuildLogMapper.updateByPrimaryKeySelective(updateImageBuildLog);
     }
 
     /**
@@ -276,6 +318,12 @@ public class BuildImageTask extends Task {
             }
         });
         imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
+        // 更新构建日志
+        ImageBuildLog updateImageBuildLog = new ImageBuildLog();
+        updateImageBuildLog.setId(imageBuildLog.getId());
+        updateImageBuildLog.setBuildState(ImageConfig.buildState_3);
+        updateImageBuildLog.setUpdateDate(new Date());
+        imageBuildLogMapper.updateByPrimaryKeySelective(updateImageBuildLog);
     }
 
     /**
@@ -288,7 +336,6 @@ public class BuildImageTask extends Task {
         updateImageConfig.setId(imageConfig.getId());
         updateImageConfig.setBuildState(ImageConfig.buildState_3);
         updateImageConfig.setUpdateDate(new Date());
-        updateImageConfig.setId(imageConfig.getId());
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
         // 构建镜像
         String branch = imageConfig.getBranch().substring(imageConfig.getBranch().lastIndexOf('/') + 1, imageConfig.getBranch().length());
@@ -302,6 +349,14 @@ public class BuildImageTask extends Task {
         updateImageConfig.setUpdateDate(new Date());
         imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
         imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
+        // 更新构建日志
+        ImageBuildLog updateImageBuildLog = new ImageBuildLog();
+        updateImageBuildLog.setId(imageBuildLog.getId());
+        updateImageBuildLog.setBuildState(ImageConfig.buildState_3);
+        updateImageBuildLog.setImageId(imageId);
+        updateImageBuildLog.setImageName(imageName);
+        updateImageBuildLog.setUpdateDate(new Date());
+        imageBuildLogMapper.updateByPrimaryKeySelective(updateImageBuildLog);
     }
 
     /**

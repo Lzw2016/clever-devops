@@ -79,12 +79,12 @@ public class ImageBuildLog extends DataEntity {
     /**
      * 默认运行实例数
      */
-    private String serverCount;
+    private Integer serverCount;
 
     /**
      * 当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)
      */
-    private String buildState;
+    private Character buildState;
 
     /**
      * Docker镜像ID
