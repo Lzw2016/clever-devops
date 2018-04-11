@@ -76,8 +76,6 @@ CREATE TABLE image_config
 --------------------------------------------------------------------------------------------------------------------------*/
 
 
-
-
 /* ====================================================================================================================
     build_image_log -- 镜像构建日志
 ==================================================================================================================== */
@@ -91,7 +89,7 @@ CREATE TABLE image_build_log
     
     repository_id           bigint          NOT NULL                            COMMENT '代码仓库ID',
     image_config_id         bigint          NOT NULL                            COMMENT 'Docker镜像配置ID',
-    project_name            varchar(255)    NOT NULL    UNIQUE                  COMMENT '项目名称',
+    project_name            varchar(255)    NOT NULL                            COMMENT '项目名称',
     repository_url          varchar(1023)   NOT NULL                            COMMENT '代码仓库地址',
     commit_id               varchar(63)     NOT NULL                            COMMENT '代码提交ID(commitID)',
     branch                  varchar(63)                                         COMMENT '代码branch或Tag',
@@ -100,32 +98,17 @@ CREATE TABLE image_build_log
     build_cmd               varchar(2047)   NOT NULL                            COMMENT '代码编译命令(例如 mvn clean install)',
     docker_file_path        varchar(255)    NOT NULL                            COMMENT 'Dockerfile文件相对路径(默认 ./Dockerfile)',
     server_ports            varchar(255)                                        COMMENT '服务需要的端口号(多个用“,”分隔)',
-    server_url              varchar(255)    NOT NULL    UNIQUE                  COMMENT '服务访问域名',
-    server_count            int             NOT NULL    DEFAULT 1               COMMENT '默认运行实例数',
-    build_state             char(1)         NOT NULL    DEFAULT '0'             COMMENT '当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)',
+    server_url              varchar(255)    NOT NULL                            COMMENT '服务访问域名',
+    server_count            int             NOT NULL                            COMMENT '默认运行实例数',
+    build_state             char(1)         NOT NULL                            COMMENT '当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)',
     image_id                varchar(255)                                        COMMENT 'Docker镜像ID',
+    image_name              varchar(255)                                        COMMENT 'Docker镜像名称',
     build_start_time        datetime(3)                                         COMMENT '镜像开始构建时间',
     build_end_time          datetime(3)                                         COMMENT '镜像结束构建时间',
     build_logs              MediumText                                          COMMENT '镜像构建日志(代码下载、编译、构建镜像日志)',
     PRIMARY KEY (id)
 ) COMMENT = '镜像构建日志';
 /*------------------------------------------------------------------------------------------------------------------------
-
-project_name
-language
-repository_url 代码仓库地址
-repository_type
-commit_id 代码提交ID(commitID)
-branch 代码branch或Tag
-code_download_path
-build_type
-build_cmd
-docker_file_path
-build_state
-image_id
-build_start_time
-build_end_time
-build_logs
 
 --------------------------------------------------------------------------------------------------------------------------*/
 

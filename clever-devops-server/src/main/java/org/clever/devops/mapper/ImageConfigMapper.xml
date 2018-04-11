@@ -13,6 +13,6 @@
     </select>
 
     <select id="getBuildingCount" resultType="int">
-        SELECT count(1) FROM image_config WHERE repository_id=#{repositoryId} AND build_state in ('1', '2', '3')
+        SELECT count(1) FROM image_config WHERE repository_id=#{repositoryId} AND build_state IN ('1', '2', '3')
     </select>
 </mapper>

@@ -20,7 +20,7 @@ public class CodeRepositoryQueryReq extends QueryByPage {
     /**
      * 项目名称
      */
-    @ApiModelProperty("项目名称")
+    @ApiModelProperty("项目名称(模糊匹配)")
     private String projectName;
 
     /**
@@ -32,7 +32,7 @@ public class CodeRepositoryQueryReq extends QueryByPage {
     /**
      * 代码仓库地址
      */
-    @ApiModelProperty("代码仓库地址")
+    @ApiModelProperty("代码仓库地址(模糊匹配)")
     private String repositoryUrl;
 
     /**

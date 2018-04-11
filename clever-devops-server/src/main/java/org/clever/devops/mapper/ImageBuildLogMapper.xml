@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!--suppress SqlDialectInspection -->
+<mapper namespace="org.clever.devops.mapper.ImageBuildLogMapper">
+
+    <select id="findByPage" resultType="org.clever.devops.entity.ImageBuildLog" parameterType="org.clever.devops.dto.request.ImageBuildLogQueryReq">
+        SELECT
+        *
+        FROM image_build_log
+        WHERE 1=1
+        <if test="repositoryId!=null">
+            AND repository_id=#{repositoryId}
+        </if>
+        <if test="imageConfigId!=null">
+            AND image_config_id=#{imageConfigId}
+        </if>
+        <if test="projectName!='' and projectName!=null">
+            AND project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+        <if test="repositoryUrl!='' and repositoryUrl!=null">
+            AND repository_url LIKE CONCAT('%', #{repositoryUrl}, '%')
+        </if>
+        <if test="commitId!='' and commitId!=null">
+            AND commit_id=#{commitId}
+        </if>
+        <if test="branch!='' and branch!=null">
+            AND branch=#{branch}
+        </if>
+        <if test="serverPorts!='' and serverPorts!=null">
+            AND server_ports LIKE CONCAT('%', #{serverPorts}, '%')
+        </if>
+        <if test="serverUrl!='' and serverUrl!=null">
+            AND server_url LIKE CONCAT('%', #{serverUrl}, '%')
+        </if>
+        <if test="buildState!='' and buildState!=null">
+            AND build_state=#{buildState}
+        </if>
+        <if test="imageId!='' and imageId!=null">
+            AND image_id=#{imageId}
+        </if>
+        <if test="imageName!='' and imageName!=null">
+            AND image_name LIKE CONCAT('%', #{imageName}, '%')
+        </if>
+        <if test="buildStartTimeStart!=null">
+            AND build_start_time>=#{buildStartTimeStart}
+        </if>
+        <if test="buildStartTimeEnd!=null">
+            <![CDATA[ AND build_start_time<=#{buildStartTimeEnd} ]]>
+        </if>
+        ORDER BY create_date DESC
+    </select>
+
+</mapper>

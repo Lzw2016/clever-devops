@@ -20,7 +20,7 @@ public class ImageConfigQueryReq extends QueryByPage {
     /**
      * 项目名称
      */
-    @ApiModelProperty("项目名称")
+    @ApiModelProperty("项目名称(模糊匹配)")
     private String projectName;
 
     /**
@@ -74,18 +74,18 @@ public class ImageConfigQueryReq extends QueryByPage {
     /**
      * 代码编译命令(例如 mvn clean install)
      */
-    @ApiModelProperty("代码编译命令(例如 mvn clean install)")
+    @ApiModelProperty("代码编译命令(例如 mvn clean install)(模糊匹配)")
     private String buildCmd;
 
     /**
      * 服务需要的端口号(多个用“,”分隔)
      */
-    @ApiModelProperty("服务需要的端口号(多个用“,”分隔)")
+    @ApiModelProperty("服务需要的端口号(多个用“,”分隔)(模糊匹配)")
     private String serverPorts;
 
     /**
      * 服务访问域名
      */
-    @ApiModelProperty("服务访问域名")
+    @ApiModelProperty("服务访问域名(模糊匹配)")
     private String serverUrl;
 }
