@@ -22,7 +22,7 @@ hs_err_pid*
 # 自定义排除的文件夹
 .git
 .idea
+imags
 clever-devops-model
-clever-devops-server/logs
 clever-devops-server/src
 

@@ -1,15 +1,17 @@
 package org.clever.devops.websocket.log;
 
-import com.spotify.docker.client.LogMessage;
-import com.spotify.docker.client.LogStream;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.LogContainerCmd;
+import com.github.dockerjava.api.model.Frame;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.clever.common.model.exception.BusinessException;
 import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.spring.SpringContextHolder;
-import org.clever.devops.convert.LogsParamConvert;
 import org.clever.devops.dto.request.TailContainerLogReq;
 import org.clever.devops.dto.response.CatContainerLogRes;
+import org.clever.devops.utils.DockerClientFactory;
 import org.clever.devops.websocket.Task;
 import org.clever.devops.websocket.TaskType;
 import org.fusesource.jansi.Ansi;
@@ -18,7 +20,8 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.nio.ByteBuffer;
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
@@ -37,7 +40,7 @@ public class ContainerLogTask extends Task {
 
     private TailContainerLogReq tailContainerLogReq;
     private CatContainerLogRes catContainerLogRes = new CatContainerLogRes();
-    private LogStream logStream;
+    private LogContainerCmd logContainerCmd;
 
     /**
      * 返回当前任务ID
@@ -97,49 +100,83 @@ public class ContainerLogTask extends Task {
      */
     @Override
     public void run() {
-        try {
-            logStream = dockerClient.logs(tailContainerLogReq.getContainerId(), LogsParamConvert.convert(tailContainerLogReq, logsBufferMaxSize));
-            while (logStream.hasNext()) {
-                LogMessage logMessage = logStream.next();
-                int lineCount = 0;
-                // 设置日志 输出类型
-                catContainerLogRes.setStdType(logMessage.stream().name());
-                // 得到日志字符串 Charset.forName("UTF-8")
-                ByteBuffer byteBuffer = logMessage.content();
-                byte[] bytes = new byte[byteBuffer.remaining()];
-                byteBuffer.get(bytes);
-                String logStr = new String(bytes);
-                // 处理换行符
-                String[] logsArray = logStr.split("\r\n|\n");
-                int pollCount = logsBuffer.size() + logsArray.length - logsBufferMaxSize;
-                while (lineCount < pollCount) {
-                    // 移除
-                    logsBuffer.poll();
-                    // 添加
-                    logsBuffer.add(logsArray[lineCount]);
-                    sendLogText(Ansi.ansi().a(logsArray[lineCount]).newline().toString());
-                    lineCount++;
+        try (DockerClient dockerClientTmp = DockerClientFactory.createDockerClient()) {
+            logContainerCmd = dockerClientTmp.logContainerCmd(tailContainerLogReq.getContainerId());
+            // 跟随输出
+            logContainerCmd.withFollowStream(true);
+            // 是否显示容器时间
+            logContainerCmd.withTimestamps(tailContainerLogReq.getTimestamps());
+            // 显示容器错误流
+            logContainerCmd.withStdErr(tailContainerLogReq.getStderr());
+            // 显示容器输出流
+            logContainerCmd.withStdOut(tailContainerLogReq.getStdout());
+            // tail输出的行数
+            logContainerCmd.withTail(logsBufferMaxSize);
+            logContainerCmd.exec(new ResultCallback<Frame>() {
+                private Closeable closeable;
+
+                @Override
+                public void onStart(Closeable closeable) {
+                    this.closeable = closeable;
                 }
-                while (lineCount < logsArray.length) {
-                    // 添加
-                    logsBuffer.add(logsArray[lineCount]);
-                    sendLogText(Ansi.ansi().a(logsArray[lineCount]).newline().toString());
-                    lineCount++;
+
+                @Override
+                public void onNext(Frame object) {
+                    // 设置日志 输出类型
+                    catContainerLogRes.setStdType(object.getStreamType().name());
+                    // 得到日志字符串 Charset.forName("UTF-8")
+                    String logStr = new String(object.getPayload());
+                    // 处理换行符
+                    int lineCount = 0;
+                    String[] logsArray = logStr.split("\r\n|\n");
+
+                    // 处理缓存 发送日志
+                    int pollCount = logsBuffer.size() + logsArray.length - logsBufferMaxSize;
+                    while (lineCount < pollCount) {
+                        // 移除
+                        logsBuffer.poll();
+                        // 添加
+                        logsBuffer.add(logsArray[lineCount]);
+                        sendLogText(Ansi.ansi().a(logsArray[lineCount]).newline().toString());
+                        lineCount++;
+                    }
+                    while (lineCount < logsArray.length) {
+                        // 添加
+                        logsBuffer.add(logsArray[lineCount]);
+                        sendLogText(Ansi.ansi().a(logsArray[lineCount]).newline().toString());
+                        lineCount++;
+                    }
                 }
-                // 移除已经关闭了的连接
-                removeCloseSession();
-                if (getWebSocketSessionSize() <= 0) {
-                    break;
+
+                @Override
+                public void onError(Throwable throwable) {
+                    log.warn("查看日志出现异常", throwable);
+                    sendCompleteMessage(Ansi.ansi().fgRed().newline().a("查看日志出现异常").newline().a(ExceptionUtils.getStackTraceAsString(throwable)).reset().toString());
                 }
-            }
+
+                @Override
+                public void onComplete() {
+                    sendCompleteMessage(Ansi.ansi().fgRed().newline().a("停止查看Docker容器日志").newline().reset().toString());
+                }
+
+                @Override
+                public void close() throws IOException {
+                    if (closeable != null) {
+                        closeable.close();
+                    }
+                }
+            });
+            // 等待所有的连接关闭
+            awaitAllSessionClose();
+            // 关闭连接
+            dockerClientTmp.close();
+            logContainerCmd.close();
         } catch (Throwable e) {
             log.error("查看日志失败", e);
             throw ExceptionUtils.unchecked(e);
         } finally {
             destroyTask();
         }
-        // 等待所有的连接关闭
-        awaitAllSessionClose();
     }
 
     /**
@@ -147,10 +184,10 @@ public class ContainerLogTask extends Task {
      */
     @Override
     public void destroyTask() {
-        if (logStream != null) {
-            // TODO 关闭方法有问题 执行不完
-            new Thread(() -> logStream.close()).start();
+        if (logContainerCmd != null) {
+            logContainerCmd.close();
         }
+        logsBuffer.clear();
         closeAllSession();
     }
 
