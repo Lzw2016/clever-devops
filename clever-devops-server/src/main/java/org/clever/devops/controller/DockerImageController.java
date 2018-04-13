@@ -5,16 +5,15 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.Image;
 import com.spotify.docker.client.messages.ImageHistory;
 import com.spotify.docker.client.messages.ImageInfo;
+import com.spotify.docker.client.messages.RemovedImage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
 import org.clever.devops.convert.ListImageParamConvert;
 import org.clever.devops.dto.request.ImageQueryReq;
+import org.clever.devops.dto.request.ImageRemoveReq;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -47,4 +46,16 @@ public class DockerImageController extends BaseController {
     public List<ImageHistory> history(@PathVariable String image) throws DockerException, InterruptedException {
         return dockerClient.history(image);
     }
+
+    @ApiOperation("删除Docker镜像")
+    @DeleteMapping("/docker/image/{image}" + JSON_SUFFIX)
+    public List<RemovedImage> remove(@PathVariable String image, ImageRemoveReq req) throws DockerException, InterruptedException {
+        return dockerClient.removeImage(image, req.getForce(), req.getNoPrune());
+    }
+
+//    @ApiOperation("删除未使用的镜像")
+//    @PostMapping("/docker/image/prune" + JSON_SUFFIX)
+//    public List<RemovedImage> prune(@PathVariable String image, ImageRemoveReq req) throws DockerException, InterruptedException {
+//        return dockerClient.p
+//    }
 }
