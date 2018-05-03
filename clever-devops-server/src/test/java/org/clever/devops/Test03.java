@@ -1,9 +1,7 @@
 package org.clever.devops;
 
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogMessage;
-import com.spotify.docker.client.LogStream;
+import com.spotify.docker.client.*;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.*;
 import com.spotify.docker.client.messages.swarm.*;
@@ -31,17 +29,32 @@ public class Test03 {
 
     @SuppressWarnings("UnnecessaryLocalVariable")
     private DockerClient newDockerClient() {
-        DockerClient docker = DefaultDockerClient.builder()
-                .uri("http://192.168.159.131:2375")
-//                .dockerCertificates()
+        try {
+            DockerCertificatesStore dockerCertificates = dockerCertificates = DockerCertificates
+                    .builder()
+//                    .dockerCertPath(Paths.get(""))
+                    .caCertPath(Paths.get("E:\\Source\\clever-devops\\clever-devops-server\\src\\main\\resources\\.docker\\ca-docker.pem"))
+                    .clientKeyPath(Paths.get("E:\\Source\\clever-devops\\clever-devops-server\\src\\main\\resources\\.docker\\key-docker.pem"))
+                    .clientCertPath(Paths.get("E:\\Source\\clever-devops\\clever-devops-server\\src\\main\\resources\\.docker\\cert-docker.pem"))
+                    .build().orNull();
+
+            DockerClient docker = DefaultDockerClient.builder()
+                    .uri("https://39.108.68.132:2376")
+                    .dockerCertificates(dockerCertificates)
 //                .registryAuthSupplier()
-                .apiVersion("v1.34")
+//                .apiVersion("v1.34")
 //                .header()
-                .connectionPoolSize(100)
-                .connectTimeoutMillis(1000 * 3)
-                .readTimeoutMillis(1000 * 3)
-                .build();
-        return docker;
+                    .connectionPoolSize(100)
+                    .connectTimeoutMillis(1000 * 3)
+                    .readTimeoutMillis(1000 * 3)
+                    .build();
+            return docker;
+
+
+        } catch (DockerCertificateException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Test
@@ -66,7 +79,7 @@ public class Test03 {
 //        DockerClient.ListContainersParam.create("", "");
 
         for (Container container : containers) {
-            log.info(container.toString());
+            log.info(" ### {}", container.toString());
         }
         docker.close();
     }

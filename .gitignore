@@ -25,3 +25,4 @@ hs_err_pid*
 *.iml
 .idea
 target
+clever-devops-server/src/main/resources/.docker

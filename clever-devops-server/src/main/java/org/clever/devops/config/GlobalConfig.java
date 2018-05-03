@@ -43,4 +43,24 @@ public class GlobalConfig {
     private Integer dockerConnectTimeoutMillis;
 
     private Integer dockerReadTimeoutMillis;
+
+    /**
+     * Docker TLS认证文件路径
+     */
+    private String dockerCertPath;
+
+    /**
+     * Docker TLS认证 ca.pem
+     */
+    private String dockerCaCertName = "ca.pem";
+
+    /**
+     * Docker TLS认证 cert.pem
+     */
+    private String dockerClientCertName = "cert.pem";
+
+    /**
+     * Docker TLS认证 key.pem
+     */
+    private String dockerClientKeyName = "key.pem";
 }
