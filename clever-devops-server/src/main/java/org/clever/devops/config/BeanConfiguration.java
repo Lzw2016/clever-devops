@@ -10,7 +10,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.ResourceUtils;
 
+import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
@@ -49,19 +51,21 @@ public class BeanConfiguration {
         if (globalConfig.getDockerReadTimeoutMillis() != null) {
             builder.readTimeoutMillis(globalConfig.getDockerReadTimeoutMillis());
         }
-        if (StringUtils.isNotBlank(globalConfig.getDockerCertPath())) {
+        if (StringUtils.isNotBlank(globalConfig.getDockerCertBasePath())) {
             try {
-                URI path = this.getClass().getResource(globalConfig.getDockerCertPath()).toURI();
-                log.info("### 加载Docker TLS认证文件 [{}]", path.toString());
+                URI baseUri = ResourceUtils.getURL(ResourceUtils.CLASSPATH_URL_PREFIX + globalConfig.getDockerCertBasePath()).toURI();
+                log.info("### 加载Docker TLS认证文件 [{}]", baseUri.toString());
                 DockerCertificatesStore dockerCertificates = DockerCertificates
                         .builder()
-                        .caCertPath(Paths.get(path).resolve(globalConfig.getDockerCaCertName()))
-                        .clientKeyPath(Paths.get(path).resolve(globalConfig.getDockerClientCertName()))
-                        .clientCertPath(Paths.get(path).resolve(globalConfig.getDockerClientKeyName()))
+                        .caCertPath(Paths.get(baseUri).resolve(globalConfig.getDockerCaCertName()))
+                        .clientKeyPath(Paths.get(baseUri).resolve(globalConfig.getDockerKeyName()))
+                        .clientCertPath(Paths.get(baseUri).resolve(globalConfig.getDockerCertName()))
                         .build().orNull();
                 builder.dockerCertificates(dockerCertificates);
             } catch (DockerCertificateException e) {
                 log.error("加载Docker TLS认证文件异常", e);
+            } catch (FileNotFoundException e) {
+                log.error("Docker TLS认证文件不存在", e);
             } catch (URISyntaxException e) {
                 log.error("读取Docker TLS认证文件失败", e);
             }

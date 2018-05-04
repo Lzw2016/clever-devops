@@ -47,7 +47,7 @@ public class GlobalConfig {
     /**
      * Docker TLS认证文件路径
      */
-    private String dockerCertPath;
+    private String dockerCertBasePath;
 
     /**
      * Docker TLS认证 ca.pem
@@ -57,10 +57,10 @@ public class GlobalConfig {
     /**
      * Docker TLS认证 cert.pem
      */
-    private String dockerClientCertName = "cert.pem";
+    private String dockerCertName = "cert.pem";
 
     /**
      * Docker TLS认证 key.pem
      */
-    private String dockerClientKeyName = "key.pem";
+    private String dockerKeyName = "key.pem";
 }
