@@ -9,15 +9,15 @@
 # --[BEGIN]------------------------------
 
 CODE="docker"
-IP="39.108.68.132"
-PASSWORD="lizhiwei1993"
+IP="127.0.0.1"
+PASSWORD="123456"
 COUNTRY="CN"
 STATE="HB"
 CITY="WH"
 ORGANIZATION="LZW"
 ORGANIZATIONAL_UNIT="Dev"
 COMMON_NAME="$IP"
-EMAIL="lzw1000000@163.com"
+EMAIL="aaa@163.com"
 
 # --[END]--
 
