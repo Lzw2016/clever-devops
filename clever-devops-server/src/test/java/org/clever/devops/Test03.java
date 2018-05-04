@@ -1,7 +1,6 @@
 package org.clever.devops;
 
 import com.spotify.docker.client.*;
-import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.*;
 import com.spotify.docker.client.messages.swarm.*;
@@ -12,6 +11,7 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -30,12 +30,13 @@ public class Test03 {
     @SuppressWarnings("UnnecessaryLocalVariable")
     private DockerClient newDockerClient() {
         try {
+            URI baseUri = new URI("jar:file:/E:/Source/clever-devops/clever-devops-server/target/clever-devops-server-1.0.0-SNAPSHOT.jar!/BOOT-INF/classes!/.docker");
             DockerCertificatesStore dockerCertificates = dockerCertificates = DockerCertificates
                     .builder()
 //                    .dockerCertPath(Paths.get(""))
-                    .caCertPath(Paths.get("E:\\Source\\clever-devops\\clever-devops-server\\src\\main\\resources\\.docker\\ca-docker.pem"))
-                    .clientKeyPath(Paths.get("E:\\Source\\clever-devops\\clever-devops-server\\src\\main\\resources\\.docker\\key-docker.pem"))
-                    .clientCertPath(Paths.get("E:\\Source\\clever-devops\\clever-devops-server\\src\\main\\resources\\.docker\\cert-docker.pem"))
+                    .caCertPath(Paths.get(baseUri).resolve("ca-docker.pem"))
+                    .clientKeyPath(Paths.get(baseUri).resolve("key-docker.pem"))
+                    .clientCertPath(Paths.get(baseUri).resolve("cert-docker.pem"))
                     .build().orNull();
 
             DockerClient docker = DefaultDockerClient.builder()
@@ -51,8 +52,8 @@ public class Test03 {
             return docker;
 
 
-        } catch (DockerCertificateException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            log.error("初始化DockerClient失败", e);
         }
         return null;
     }
