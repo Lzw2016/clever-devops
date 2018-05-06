@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
  * 创建时间：2017-12-02 15:19 <br/>
  */
 @Api(description = "Docker镜像配置")
-@RequestMapping("/devops")
+@RequestMapping("/api/devops")
 @RestController
 public class ImageConfigController extends BaseController {
 

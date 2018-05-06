@@ -30,7 +30,7 @@ import java.util.List;
  * 创建时间：2017-12-17 17:20 <br/>
  */
 @Api(description = "Docker Containers操作")
-@RequestMapping("/devops")
+@RequestMapping("/api/devops")
 @RestController
 @Slf4j
 public class DockerContainersController extends BaseController {

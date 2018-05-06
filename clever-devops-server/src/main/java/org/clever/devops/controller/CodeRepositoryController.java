@@ -22,7 +22,7 @@ import java.util.List;
  * 创建时间：2017-12-02 15:21 <br/>
  */
 @Api(description = "代码仓库")
-@RequestMapping("/devops")
+@RequestMapping("/api/devops")
 @RestController
 public class CodeRepositoryController extends BaseController {
 

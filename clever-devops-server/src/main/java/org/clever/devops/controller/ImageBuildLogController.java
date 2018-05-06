@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 创建时间：2018-04-11 11:19 <br/>
  */
 @Api(description = "Docker镜像构建日志")
-@RequestMapping("/devops")
+@RequestMapping("/api/devops")
 @RestController
 public class ImageBuildLogController extends BaseController {
 
