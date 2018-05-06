@@ -31,7 +31,7 @@ public class DockerImageController extends BaseController {
 
     @ApiOperation("查询Docker Image")
     @GetMapping("/docker/image" + JSON_SUFFIX)
-    public List<Image> listContainers(ImageQueryReq req) throws DockerException, InterruptedException {
+    public List<Image> listImage(ImageQueryReq req) throws DockerException, InterruptedException {
         return dockerClient.listImages(ListImageParamConvert.convert(req));
     }
 
