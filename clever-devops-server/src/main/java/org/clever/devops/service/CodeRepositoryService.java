@@ -9,6 +9,7 @@ import org.clever.devops.dto.request.CodeRepositoryAddReq;
 import org.clever.devops.dto.request.CodeRepositoryQueryReq;
 import org.clever.devops.dto.request.CodeRepositoryUpdateReq;
 import org.clever.devops.entity.CodeRepository;
+import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.mapper.CodeRepositoryMapper;
 import org.clever.devops.mapper.ImageConfigMapper;
 import org.clever.devops.utils.CodeRepositoryUtils;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -135,11 +137,13 @@ public class CodeRepositoryService extends BaseService {
         if (codeRepository == null) {
             throw new BusinessException(String.format("项目名称不存在，ProjectName=%1$s", projectName));
         }
-        // TODO 校验当前代码仓库是否被依赖
-
-        // TODO 删除代码仓库
+        // 校验当前代码仓库是否被依赖
+        List<ImageConfig> list = imageConfigMapper.getByRepositoryId(codeRepository.getId());
+        if (list.size() > 0) {
+            throw new BusinessException(String.format("不能删除，存在%1$s个服务配置依赖当前代码仓库", list.size()));
+        }
+        // 删除代码仓库
+        codeRepositoryMapper.deleteByPrimaryKey(codeRepository.getId());
         return codeRepository;
     }
-
-
 }

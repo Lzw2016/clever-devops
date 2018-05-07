@@ -58,7 +58,7 @@ public class ImageConfigService extends BaseService {
             throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigAddReq.getBranch()));
         }
         // 校验镜像配置已经存在
-        ImageConfig tmp = imageConfigMapper.getByRepositoryId(imageConfigAddReq.getRepositoryId(), gitBranch.getCommitId());
+        ImageConfig tmp = imageConfigMapper.getByRepositoryIdAndCommitId(imageConfigAddReq.getRepositoryId(), gitBranch.getCommitId());
         if (tmp != null) {
             throw new BusinessException(String.format("Docker镜像配置已经存在，RepositoryId=%1$s, CommitId=%2$s", imageConfigAddReq.getRepositoryId(), gitBranch.getCommitId()));
         }
@@ -121,7 +121,7 @@ public class ImageConfigService extends BaseService {
                 throw new BusinessException(String.format("“branch或Tag”不存在，branch=%1$s", imageConfigUpdateReq.getBranch()));
             }
             // 校验镜像配置已经存在
-            ImageConfig tmp = imageConfigMapper.getByRepositoryId(imageConfig.getRepositoryId(), imageConfig.getCommitId());
+            ImageConfig tmp = imageConfigMapper.getByRepositoryIdAndCommitId(imageConfig.getRepositoryId(), imageConfig.getCommitId());
             if (tmp != null && !Objects.equals(imageConfig.getId(), tmp.getId())) {
                 throw new BusinessException(String.format("Docker镜像配置已经存在，RepositoryId=%1$s, CommitId=%2$s", imageConfig.getRepositoryId(), imageConfig.getCommitId()));
             }
@@ -155,7 +155,8 @@ public class ImageConfigService extends BaseService {
         }
         // TODO 校验当前Docker镜像配置是否被依赖
 
-        // TODO 删除Docker镜像配置
+        // 删除Docker镜像配置
+        imageConfigMapper.deleteByPrimaryKey(imageConfig.getId());
         return imageConfig;
     }
 

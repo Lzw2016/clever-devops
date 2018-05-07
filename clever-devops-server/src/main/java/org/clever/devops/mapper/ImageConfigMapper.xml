@@ -3,8 +3,11 @@
 
 <!--suppress SqlDialectInspection -->
 <mapper namespace="org.clever.devops.mapper.ImageConfigMapper">
-
     <select id="getByRepositoryId" resultType="org.clever.devops.entity.ImageConfig">
+        SELECT * FROM image_config WHERE repository_id=#{repositoryId}
+    </select>
+
+    <select id="getByRepositoryIdAndCommitId" resultType="org.clever.devops.entity.ImageConfig">
         SELECT * FROM image_config WHERE repository_id=#{repositoryId} AND commit_id=#{commitId}
     </select>
 
