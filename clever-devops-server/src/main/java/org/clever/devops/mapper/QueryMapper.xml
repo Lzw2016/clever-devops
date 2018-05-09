@@ -24,7 +24,7 @@
             AND b.language = #{language}
         </if>
         <if test="repositoryUrl!='' and repositoryUrl!=null">
-            AND b.repository_url = #{repositoryUrl}
+            AND b.repository_url LIKE CONCAT('%', #{repositoryUrl}, '%')
         </if>
         <if test="repositoryType!='' and repositoryType!=null">
             AND b.repository_type = #{repositoryType}
@@ -36,7 +36,7 @@
             AND a.repository_id = #{repositoryId}
         </if>
         <if test="branch!='' and branch!=null">
-            AND a.branch = #{branch}
+            AND a.branch LIKE CONCAT('%', #{branch}, '%')
         </if>
         <if test="commitId!='' and commitId!=null">
             AND a.commit_id = #{commitId}
@@ -52,6 +52,9 @@
         </if>
         <if test="serverUrl!='' and serverUrl!=null">
             AND a.server_url LIKE CONCAT('%', #{serverUrl}, '%')
+        </if>
+        <if test="buildState!='' and buildState!=null">
+            AND a.build_state = #{buildState}
         </if>
         ORDER BY a.server_url, a.create_date DESC
     </select>

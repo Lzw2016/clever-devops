@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.clever.common.model.request.QueryByPage;
 
+import javax.validation.constraints.Pattern;
+
 /**
  * 查询Docker镜像配置
  * <p>
@@ -32,7 +34,7 @@ public class ImageConfigQueryReq extends QueryByPage {
     /**
      * 代码仓库地址
      */
-    @ApiModelProperty("代码仓库地址")
+    @ApiModelProperty("代码仓库地址(模糊匹配)")
     private String repositoryUrl;
 
     /**
@@ -56,7 +58,7 @@ public class ImageConfigQueryReq extends QueryByPage {
     /**
      * 代码branch或Tag
      */
-    @ApiModelProperty("代码branch或Tag")
+    @ApiModelProperty("代码branch或Tag(模糊匹配)")
     private String branch;
 
     /**
@@ -88,4 +90,8 @@ public class ImageConfigQueryReq extends QueryByPage {
      */
     @ApiModelProperty("服务访问域名(模糊匹配)")
     private String serverUrl;
+
+    @ApiModelProperty("当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)")
+    @Pattern(regexp = "[0123SF]", message = "当前镜像构建状态(0：未构建, 1：正在下载代码, 2：正在编译代码, 3：正在构建镜像, S：构建成功, F：构建失败)")
+    private String buildState;
 }
