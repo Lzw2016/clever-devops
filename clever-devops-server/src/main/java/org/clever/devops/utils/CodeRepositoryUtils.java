@@ -12,6 +12,7 @@ import org.clever.devops.entity.ImageConfig;
 import org.clever.devops.websocket.ProgressMonitorToWebSocket;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -117,19 +118,23 @@ public class CodeRepositoryUtils {
      * @param codeRepository 代码仓库信息
      */
     public static List<ImageConfig.GitBranch> getAllBranch(CodeRepository codeRepository) {
+        List<ImageConfig.GitBranch> list;
         if (Objects.equals(CodeRepository.Authorization_Type_0, codeRepository.getAuthorizationType())) {
             // 没有访问限制
-            return GitUtils.getAllBranch(codeRepository.getRepositoryUrl());
+            list = GitUtils.getAllBranch(codeRepository.getRepositoryUrl());
         } else if (Objects.equals(CodeRepository.Authorization_Type_1, codeRepository.getAuthorizationType())) {
             // 需要用户名、密码访问
             CodeRepository.UserNameAndPassword userNameAndPassword = JacksonMapper.nonEmptyMapper().fromJson(codeRepository.getAuthorizationInfo(), CodeRepository.UserNameAndPassword.class);
             if (userNameAndPassword == null) {
                 throw new BusinessException("读取授权用户名密码失败");
             }
-            return GitUtils.getAllBranch(codeRepository.getRepositoryUrl(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword());
+            list = GitUtils.getAllBranch(codeRepository.getRepositoryUrl(), userNameAndPassword.getUsername(), userNameAndPassword.getPassword());
         } else {
             throw new BusinessException("不支持的代码仓库授权类型");
         }
+        // 排序
+        Collections.sort(list);
+        return list;
     }
 
     /**

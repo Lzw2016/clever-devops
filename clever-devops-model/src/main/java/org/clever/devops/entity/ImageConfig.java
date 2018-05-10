@@ -145,7 +145,7 @@ public class ImageConfig extends DataEntity {
      * 代码branch或Tag
      */
     @Data
-    public static class GitBranch {
+    public static class GitBranch implements Comparable<GitBranch> {
         /**
          * 代码提交ID(commitID)
          */
@@ -166,6 +166,23 @@ public class ImageConfig extends DataEntity {
         public GitBranch(String commitId, String branch) {
             this.commitId = commitId;
             this.branch = branch;
+        }
+
+        @Override
+        public int compareTo(GitBranch o) {
+            if (o == null) {
+                return -1;
+            }
+            if (this.branch != null && o.branch != null) {
+                return this.branch.compareTo(o.branch);
+            }
+            if (this.branch == null && o.branch == null) {
+                return 0;
+            }
+            if (this.branch == null) {
+                return -1;
+            }
+            return 1;
         }
     }
 }
