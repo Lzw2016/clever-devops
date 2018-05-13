@@ -23,6 +23,9 @@ public class DockerClientFactory {
         if (StringUtils.isNotBlank(globalConfig.getDockerVersion())) {
             builder.withApiVersion(globalConfig.getDockerVersion());
         }
+        builder.withDockerTlsVerify(true);
+        builder.withDockerCertPath("E:\\Source\\clever-devops\\.docker");
+//        builder.withDockerTlsVerify()
         DOCKER_CLIENT_CONFIG = builder.build();
     }
 
