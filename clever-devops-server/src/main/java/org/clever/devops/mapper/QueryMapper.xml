@@ -14,7 +14,27 @@
         b.repository_type,
         b.authorization_type,
         b.authorization_info,
-        a.*
+        a.`id`,
+        a.`create_by`,
+        a.`create_date`,
+        a.`update_by`,
+        a.`update_date`,
+        a.`repository_id`,
+        a.`commit_id`,
+        a.`branch`,
+        a.`code_download_path`,
+        a.`build_type`,
+        a.`build_cmd`,
+        a.`docker_file_path`,
+        a.`server_ports`,
+        a.`server_url`,
+        a.`server_count`,
+        a.`build_state`,
+        a.`image_id`,
+        a.`image_name`,
+        a.`build_start_time`,
+        a.`build_end_time`,
+        a.`description`
         FROM image_config a LEFT JOIN code_repository b ON (a.repository_id = b.id)
         WHERE 1 = 1
         <if test="projectName!='' and projectName!=null">

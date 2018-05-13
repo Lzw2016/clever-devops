@@ -5,7 +5,29 @@
 
     <select id="findByPage" resultType="org.clever.devops.entity.ImageBuildLog" parameterType="org.clever.devops.dto.request.ImageBuildLogQueryReq">
         SELECT
-        *
+        `id`,
+        `create_by`,
+        `create_date`,
+        `update_by`,
+        `update_date`,
+        `repository_id`,
+        `image_config_id`,
+        `project_name`,
+        `repository_url`,
+        `commit_id`,
+        `branch`,
+        `code_download_path`,
+        `build_type`,
+        `build_cmd`,
+        `docker_file_path`,
+        `server_ports`,
+        `server_url`,
+        `server_count`,
+        `build_state`,
+        `image_id`,
+        `image_name`,
+        `build_start_time`,
+        `build_end_time`
         FROM image_build_log
         WHERE 1=1
         <if test="repositoryId!=null">
