@@ -46,7 +46,7 @@
             AND commit_id=#{commitId}
         </if>
         <if test="branch!='' and branch!=null">
-            AND branch=#{branch}
+            AND branch=LIKE CONCAT('%', #{branch}, '%')
         </if>
         <if test="serverPorts!='' and serverPorts!=null">
             AND server_ports LIKE CONCAT('%', #{serverPorts}, '%')
