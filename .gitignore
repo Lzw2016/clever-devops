@@ -26,3 +26,4 @@ hs_err_pid*
 .idea
 target
 .docker
+clever-devops-server/src/main/resources/dev/application.properties
