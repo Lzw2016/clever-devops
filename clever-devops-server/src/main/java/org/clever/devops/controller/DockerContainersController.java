@@ -11,6 +11,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.clever.common.model.response.AjaxMessage;
 import org.clever.common.server.controller.BaseController;
 import org.clever.devops.convert.ListContainersParamConvert;
 import org.clever.devops.convert.LogsParamConvert;
@@ -61,42 +62,48 @@ public class DockerContainersController extends BaseController {
 
     @ApiOperation("启动Docker Containers")
     @GetMapping("/docker/container/{id}/start" + JSON_SUFFIX)
-    public void start(@PathVariable String id) throws DockerException, InterruptedException {
+    public AjaxMessage<String> start(@PathVariable String id) throws DockerException, InterruptedException {
         dockerClient.startContainer(id);
+        return new AjaxMessage<>(id, true, "操作成功", "操作失败");
     }
 
     @ApiOperation("停止Docker Containers")
     @GetMapping("/docker/container/{id}/stop" + JSON_SUFFIX)
-    public void stop(@PathVariable String id, @RequestParam(required = false, defaultValue = "0") Integer secondsToWaitBeforeKilling) throws DockerException, InterruptedException {
+    public AjaxMessage<String> stop(@PathVariable String id, @RequestParam(required = false, defaultValue = "0") Integer secondsToWaitBeforeKilling) throws DockerException, InterruptedException {
         dockerClient.stopContainer(id, secondsToWaitBeforeKilling);
+        return new AjaxMessage<>(id, true, "操作成功", "操作失败");
     }
 
     @ApiOperation("重新启动Docker Containers")
     @GetMapping("/docker/container/{id}/restart" + JSON_SUFFIX)
-    public void restart(@PathVariable String id, @RequestParam(required = false) Integer secondsToWaitBeforeRestart) throws DockerException, InterruptedException {
+    public AjaxMessage<String> restart(@PathVariable String id, @RequestParam(required = false) Integer secondsToWaitBeforeRestart) throws DockerException, InterruptedException {
         if (secondsToWaitBeforeRestart != null) {
             dockerClient.restartContainer(id, secondsToWaitBeforeRestart);
         } else {
             dockerClient.restartContainer(id);
         }
+        return new AjaxMessage<>(id, true, "操作成功", "操作失败");
     }
 
     @ApiOperation("杀死Docker Containers")
     @GetMapping("/docker/container/{id}/kill" + JSON_SUFFIX)
-    public void kill(@PathVariable String id) throws DockerException, InterruptedException {
+    public AjaxMessage<String> kill(@PathVariable String id) throws DockerException, InterruptedException {
         dockerClient.killContainer(id);
+        return new AjaxMessage<>(id, true, "操作成功", "操作失败");
     }
 
     @ApiOperation("暂停Docker Containers")
     @GetMapping("/docker/container/{id}/pause" + JSON_SUFFIX)
-    public void pause(@PathVariable String id) throws DockerException, InterruptedException {
+    public AjaxMessage<String> pause(@PathVariable String id) throws DockerException, InterruptedException {
         dockerClient.pauseContainer(id);
+        return new AjaxMessage<>(id, true, "操作成功", "操作失败");
     }
 
     @ApiOperation("恢复Docker Containers(取消暂停)")
     @GetMapping("/docker/container/{id}/unpause" + JSON_SUFFIX)
-    public void unpause(@PathVariable String id) throws DockerException, InterruptedException {
+    public AjaxMessage<String> unpause(@PathVariable String id) throws DockerException, InterruptedException {
         dockerClient.unpauseContainer(id);
+        return new AjaxMessage<>(id, true, "操作成功", "操作失败");
     }
 
 //    @ApiOperation("更新Docker Containers")
@@ -111,14 +118,16 @@ public class DockerContainersController extends BaseController {
 
     @ApiOperation("重命名Docker Containers")
     @GetMapping("/docker/container/{id}/rename" + JSON_SUFFIX)
-    public void rename(@PathVariable String id, @RequestParam("newName") String newName) throws DockerException, InterruptedException {
+    public AjaxMessage<String> rename(@PathVariable String id, @RequestParam("newName") String newName) throws DockerException, InterruptedException {
         dockerClient.renameContainer(id, newName);
+        return new AjaxMessage<>(id, true, "操作成功", "操作失败");
     }
 
     @ApiOperation("删除Docker Containers")
     @GetMapping("/docker/container/{id}/remove" + JSON_SUFFIX)
-    public void remove(@PathVariable String id, ContainerRemoveReq req) throws DockerException, InterruptedException {
+    public AjaxMessage<String> remove(@PathVariable String id, ContainerRemoveReq req) throws DockerException, InterruptedException {
         dockerClient.removeContainer(id, RemoveContainerParamConvert.convert(req));
+        return new AjaxMessage<>(id, true, "操作成功", "操作失败");
     }
 
 //    @ApiOperation("读取Docker Containers中文件流")
