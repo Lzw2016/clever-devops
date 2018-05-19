@@ -41,6 +41,16 @@ public class ImageConfigUtils {
     private static final String DEVOPS_FLAG = "DevopsFlag";
 
     /**
+     * 代码仓库ID
+     */
+    private static final String CODE_REPOSITORY_ID = "CodeRepositoryId";
+
+    /**
+     * 镜像配置ID
+     */
+    private static final String IMAGE_CONFIG_ID = "ImageConfigId";
+
+    /**
      * 镜像标签 项目名称
      */
     private static final String IMAGE_LABEL_PROJECT_NAME = "ProjectName";
@@ -89,6 +99,8 @@ public class ImageConfigUtils {
         // 构建镜像 - 整理参数
         Map<String, String> labels = new HashMap<>();
         labels.put(DEVOPS_FLAG, "true");
+        labels.put(CODE_REPOSITORY_ID, String.valueOf(codeRepository.getId()));
+        labels.put(IMAGE_CONFIG_ID, String.valueOf(imageConfig.getId()));
         labels.put(IMAGE_LABEL_PROJECT_NAME, codeRepository.getProjectName());
         labels.put(IMAGE_LABEL_LANGUAGE, codeRepository.getLanguage());
         labels.put(IMAGE_LABEL_REPOSITORY_URL, codeRepository.getRepositoryUrl());
