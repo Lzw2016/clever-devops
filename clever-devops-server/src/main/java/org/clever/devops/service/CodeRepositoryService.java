@@ -1,8 +1,8 @@
 package org.clever.devops.service;
 
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
-import org.clever.common.model.exception.BusinessException;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.clever.common.exception.BusinessException;
 import org.clever.common.server.service.BaseService;
 import org.clever.common.utils.mapper.BeanMapper;
 import org.clever.devops.dto.request.CodeRepositoryAddReq;
@@ -54,17 +54,17 @@ public class CodeRepositoryService extends BaseService {
         // 测试连接代码仓库地址
         CodeRepositoryUtils.testConnect(codeRepository);
         // 保存数据
-        codeRepositoryMapper.insertSelective(codeRepository);
+        codeRepositoryMapper.insert(codeRepository);
         return codeRepository;
     }
 
     /**
      * 查询代码仓库
      */
-    public PageInfo<CodeRepository> findCodeRepository(CodeRepositoryQueryReq codeRepositoryQueryReq) {
-        return PageHelper
-                .startPage(codeRepositoryQueryReq.getPageNo(), codeRepositoryQueryReq.getPageSize())
-                .doSelectPageInfo(() -> codeRepositoryMapper.findCodeRepository(codeRepositoryQueryReq));
+    public IPage<CodeRepository> findCodeRepository(CodeRepositoryQueryReq codeRepositoryQueryReq) {
+        Page<CodeRepository> page = new Page<>(codeRepositoryQueryReq.getPageNo(), codeRepositoryQueryReq.getPageSize());
+        page.setRecords(codeRepositoryMapper.findCodeRepository(codeRepositoryQueryReq, page));
+        return page;
     }
 
     /**
@@ -78,7 +78,7 @@ public class CodeRepositoryService extends BaseService {
      * 获取代码仓库
      */
     public CodeRepository getCodeRepository(Long id) {
-        return codeRepositoryMapper.selectByPrimaryKey(id);
+        return codeRepositoryMapper.selectById(id);
     }
 
     /**
@@ -89,7 +89,7 @@ public class CodeRepositoryService extends BaseService {
      */
     @Transactional
     public CodeRepository updateCodeRepository(Long id, CodeRepositoryUpdateReq codeRepositoryUpdateReq) {
-        CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(id);
+        CodeRepository codeRepository = codeRepositoryMapper.selectById(id);
         if (codeRepository == null) {
             throw new BusinessException(String.format("代码仓库不存在，ID=%1$s", id));
         }
@@ -123,8 +123,8 @@ public class CodeRepositoryService extends BaseService {
         BeanMapper.copyTo(codeRepositoryUpdateReq, codeRepository);
         codeRepository.setUpdateBy("");
         codeRepository.setUpdateDate(new Date());
-        codeRepositoryMapper.updateByPrimaryKeySelective(codeRepository);
-        codeRepository = codeRepositoryMapper.selectByPrimaryKey(id);
+        codeRepositoryMapper.updateById(codeRepository);
+        codeRepository = codeRepositoryMapper.selectById(id);
         return codeRepository;
     }
 
@@ -143,7 +143,7 @@ public class CodeRepositoryService extends BaseService {
             throw new BusinessException(String.format("不能删除，存在%1$s个服务配置依赖当前代码仓库", list.size()));
         }
         // 删除代码仓库
-        codeRepositoryMapper.deleteByPrimaryKey(codeRepository.getId());
+        codeRepositoryMapper.deleteById(codeRepository.getId());
         return codeRepository;
     }
 }

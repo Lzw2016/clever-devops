@@ -1,11 +1,11 @@
 package org.clever.devops.service;
 
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spotify.docker.client.messages.ContainerCreation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.clever.common.model.exception.BusinessException;
+import org.clever.common.exception.BusinessException;
 import org.clever.common.server.service.BaseService;
 import org.clever.common.utils.DateTimeUtils;
 import org.clever.common.utils.mapper.BeanMapper;
@@ -48,7 +48,7 @@ public class ImageConfigService extends BaseService {
     @Transactional
     public ImageConfig addImageConfig(ImageConfigAddReq imageConfigAddReq) {
         // 获取代码仓库信息
-        CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfigAddReq.getRepositoryId());
+        CodeRepository codeRepository = codeRepositoryMapper.selectById(imageConfigAddReq.getRepositoryId());
         if (codeRepository == null) {
             throw new BusinessException(String.format("代码仓库不存在，RepositoryId=%1$s", imageConfigAddReq.getRepositoryId()));
         }
@@ -72,17 +72,17 @@ public class ImageConfigService extends BaseService {
         imageConfig.setCommitId(gitBranch.getCommitId());
         imageConfig.setCreateBy("");
         imageConfig.setCreateDate(new Date());
-        imageConfigMapper.insertSelective(imageConfig);
+        imageConfigMapper.insert(imageConfig);
         return imageConfig;
     }
 
     /**
      * 查询代码仓库
      */
-    public PageInfo<ImageConfigQueryRes> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
-        return PageHelper
-                .startPage(imageConfigQueryReq.getPageNo(), imageConfigQueryReq.getPageSize())
-                .doSelectPageInfo(() -> queryMapper.findImageConfig(imageConfigQueryReq));
+    public IPage<ImageConfigQueryRes> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
+        Page<ImageConfigQueryRes> page = new Page<>(imageConfigQueryReq.getPageNo(), imageConfigQueryReq.getPageSize());
+        page.setRecords(queryMapper.findImageConfig(imageConfigQueryReq, page));
+        return page;
     }
 
     /**
@@ -98,7 +98,7 @@ public class ImageConfigService extends BaseService {
     @Transactional
     public ImageConfig updateImageConfig(Long id, ImageConfigUpdateReq imageConfigUpdateReq) {
         // 查询需要更新的数据
-        ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(id);
+        ImageConfig imageConfig = imageConfigMapper.selectById(id);
         if (imageConfig == null) {
             throw new BusinessException(String.format("Docker镜像配置不存在，ID=%1$s", id));
         }
@@ -111,7 +111,7 @@ public class ImageConfigService extends BaseService {
         // 更新了 Branch ，需要校验
         if (imageConfigUpdateReq.getBranch() != null && !Objects.equals(imageConfig.getBranch(), imageConfigUpdateReq.getBranch())) {
             // 获取代码仓库信息
-            CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfig.getRepositoryId());
+            CodeRepository codeRepository = codeRepositoryMapper.selectById(imageConfig.getRepositoryId());
             if (codeRepository == null) {
                 throw new BusinessException(String.format("代码仓库不存在，RepositoryId=%1$s", imageConfig.getRepositoryId()));
             }
@@ -140,8 +140,8 @@ public class ImageConfigService extends BaseService {
         BeanMapper.copyTo(imageConfigUpdateReq, imageConfig);
         imageConfig.setUpdateBy("");
         imageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(imageConfig);
-        imageConfig = imageConfigMapper.selectByPrimaryKey(id);
+        imageConfigMapper.updateById(imageConfig);
+        imageConfig = imageConfigMapper.selectById(id);
         return imageConfig;
     }
 
@@ -149,14 +149,14 @@ public class ImageConfigService extends BaseService {
      * 删除Docker镜像配置
      */
     public ImageConfig delete(Long id) {
-        ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(id);
+        ImageConfig imageConfig = imageConfigMapper.selectById(id);
         if (imageConfig == null) {
             throw new BusinessException(String.format("Docker镜像配置不存在，ID=%1$s", id));
         }
         // TODO 校验当前Docker镜像配置是否被依赖
 
         // 删除Docker镜像配置
-        imageConfigMapper.deleteByPrimaryKey(imageConfig.getId());
+        imageConfigMapper.deleteById(imageConfig.getId());
         return imageConfig;
     }
 
@@ -164,7 +164,7 @@ public class ImageConfigService extends BaseService {
      * 根据ImageConfig生成的镜像新增Docker容器
      */
     public ContainerCreation createContainer(Long id) {
-        ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(id);
+        ImageConfig imageConfig = imageConfigMapper.selectById(id);
         if (imageConfig == null) {
             throw new BusinessException(String.format("Docker镜像配置不存在，ID=%1$s", id));
         }

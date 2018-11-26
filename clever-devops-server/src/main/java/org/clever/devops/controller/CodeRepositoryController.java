@@ -1,6 +1,6 @@
 package org.clever.devops.controller;
 
-import com.github.pagehelper.PageInfo;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
@@ -37,7 +37,7 @@ public class CodeRepositoryController extends BaseController {
 
     @ApiOperation("查询代码仓库")
     @GetMapping("/code_repository" + JSON_SUFFIX)
-    public PageInfo<CodeRepository> findCodeRepository(CodeRepositoryQueryReq codeRepositoryQueryReq) {
+    public IPage<CodeRepository> findCodeRepository(CodeRepositoryQueryReq codeRepositoryQueryReq) {
         return codeRepositoryService.findCodeRepository(codeRepositoryQueryReq);
     }
 

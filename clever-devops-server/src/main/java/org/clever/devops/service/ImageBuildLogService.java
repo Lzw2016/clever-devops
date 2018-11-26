@@ -1,7 +1,7 @@
 package org.clever.devops.service;
 
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.clever.devops.dto.request.ImageBuildLogQueryReq;
 import org.clever.devops.entity.ImageBuildLog;
 import org.clever.devops.mapper.ImageBuildLogMapper;
@@ -18,13 +18,13 @@ public class ImageBuildLogService {
     @Autowired
     private ImageBuildLogMapper imageBuildLogMapper;
 
-    public PageInfo<ImageBuildLog> findByPage(ImageBuildLogQueryReq imageBuildLogQueryReq) {
-        return PageHelper
-                .startPage(imageBuildLogQueryReq.getPageNo(), imageBuildLogQueryReq.getPageSize())
-                .doSelectPageInfo(() -> imageBuildLogMapper.findByPage(imageBuildLogQueryReq));
+    public IPage<ImageBuildLog> findByPage(ImageBuildLogQueryReq imageBuildLogQueryReq) {
+        Page<ImageBuildLog> page = new Page<>(imageBuildLogQueryReq.getPageNo(), imageBuildLogQueryReq.getPageSize());
+        page.setRecords(imageBuildLogMapper.findByPage(imageBuildLogQueryReq, page));
+        return page;
     }
 
-    public ImageBuildLog getImageBuildLog(Long id){
-        return imageBuildLogMapper.selectByPrimaryKey(id);
+    public ImageBuildLog getImageBuildLog(Long id) {
+        return imageBuildLogMapper.selectById(id);
     }
 }

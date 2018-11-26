@@ -37,44 +37,44 @@
         a.`description`
         FROM image_config a LEFT JOIN code_repository b ON (a.repository_id = b.id)
         WHERE 1 = 1
-        <if test="projectName!='' and projectName!=null">
-            AND b.project_name LIKE CONCAT('%', #{projectName}, '%')
+        <if test="query.projectName!='' and query.projectName!=null">
+            AND b.project_name LIKE CONCAT('%', #{query.projectName}, '%')
         </if>
-        <if test="language!='' and language!=null">
-            AND b.language = #{language}
+        <if test="query.language!='' and query.language!=null">
+            AND b.language = #{query.language}
         </if>
-        <if test="repositoryUrl!='' and repositoryUrl!=null">
-            AND b.repository_url LIKE CONCAT('%', #{repositoryUrl}, '%')
+        <if test="query.repositoryUrl!='' and query.repositoryUrl!=null">
+            AND b.repository_url LIKE CONCAT('%', #{query.repositoryUrl}, '%')
         </if>
-        <if test="repositoryType!='' and repositoryType!=null">
-            AND b.repository_type = #{repositoryType}
+        <if test="query.repositoryType!='' and query.repositoryType!=null">
+            AND b.repository_type = #{query.repositoryType}
         </if>
-        <if test="authorizationType!='' and authorizationType!=null">
-            AND b.authorization_type = #{authorizationType}
+        <if test="query.authorizationType!='' and query.authorizationType!=null">
+            AND b.authorization_type = #{query.authorizationType}
         </if>
-        <if test="repositoryId!=null">
-            AND a.repository_id = #{repositoryId}
+        <if test="query.repositoryId!=null">
+            AND a.repository_id = #{query.repositoryId}
         </if>
-        <if test="branch!='' and branch!=null">
-            AND a.branch LIKE CONCAT('%', #{branch}, '%')
+        <if test="query.branch!='' and query.branch!=null">
+            AND a.branch LIKE CONCAT('%', #{query.branch}, '%')
         </if>
-        <if test="commitId!='' and commitId!=null">
-            AND a.commit_id = #{commitId}
+        <if test="query.commitId!='' and query.commitId!=null">
+            AND a.commit_id = #{query.commitId}
         </if>
-        <if test="buildType!='' and buildType!=null">
-            AND a.build_type = #{buildType}
+        <if test="query.buildType!='' and query.buildType!=null">
+            AND a.build_type = #{query.buildType}
         </if>
-        <if test="buildCmd!='' and buildCmd!=null">
-            AND a.build_cmd LIKE CONCAT('%', #{buildCmd}, '%')
+        <if test="query.buildCmd!='' and query.buildCmd!=null">
+            AND a.build_cmd LIKE CONCAT('%', #{query.buildCmd}, '%')
         </if>
-        <if test="serverPorts!='' and serverPorts!=null">
-            AND a.server_ports LIKE CONCAT('%', #{serverPorts}, '%')
+        <if test="query.serverPorts!='' and query.serverPorts!=null">
+            AND a.server_ports LIKE CONCAT('%', #{query.serverPorts}, '%')
         </if>
-        <if test="serverUrl!='' and serverUrl!=null">
-            AND a.server_url LIKE CONCAT('%', #{serverUrl}, '%')
+        <if test="query.serverUrl!='' and query.serverUrl!=null">
+            AND a.server_url LIKE CONCAT('%', #{query.serverUrl}, '%')
         </if>
-        <if test="buildState!='' and buildState!=null">
-            AND a.build_state = #{buildState}
+        <if test="query.buildState!='' and query.buildState!=null">
+            AND a.build_state = #{query.buildState}
         </if>
         ORDER BY a.server_url, a.create_date DESC
     </select>

@@ -3,7 +3,7 @@ package org.clever.devops.utils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.clever.common.model.exception.BusinessException;
+import org.clever.common.exception.BusinessException;
 import org.clever.common.utils.mapper.JacksonMapper;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.config.GlobalConfig;

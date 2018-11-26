@@ -67,12 +67,12 @@ public class BuildImageHandler extends Handler {
             sendErrorMessage(session, JacksonMapper.nonEmptyMapper().toJson(BaseValidatorUtils.extractPropertyAndMessageAsList(e, ",")));
         }
         // 业务校验 - 校验对应的配置信息都存在
-        ImageConfig imageConfig = imageConfigMapper.selectByPrimaryKey(buildImageReq.getImageConfigId());
+        ImageConfig imageConfig = imageConfigMapper.selectById(buildImageReq.getImageConfigId());
         if (imageConfig == null) {
             sendErrorMessage(session, String.format("Docker镜像配置不存在，ImageConfigId=%1$s", buildImageReq.getImageConfigId()));
             return;
         }
-        CodeRepository codeRepository = codeRepositoryMapper.selectByPrimaryKey(imageConfig.getRepositoryId());
+        CodeRepository codeRepository = codeRepositoryMapper.selectById(imageConfig.getRepositoryId());
         if (codeRepository == null) {
             sendErrorMessage(session, String.format("代码仓库不存在，ImageConfigId=%1$s", imageConfig.getRepositoryId()));
             return;

@@ -30,44 +30,44 @@
         `build_end_time`
         FROM image_build_log
         WHERE 1=1
-        <if test="repositoryId!=null">
-            AND repository_id=#{repositoryId}
+        <if test="query.repositoryId!=null">
+            AND repository_id=#{query.repositoryId}
         </if>
-        <if test="imageConfigId!=null">
-            AND image_config_id=#{imageConfigId}
+        <if test="query.imageConfigId!=null">
+            AND image_config_id=#{query.imageConfigId}
         </if>
-        <if test="projectName!='' and projectName!=null">
-            AND project_name LIKE CONCAT('%', #{projectName}, '%')
+        <if test="query.projectName!='' and query.projectName!=null">
+            AND project_name LIKE CONCAT('%', #{query.projectName}, '%')
         </if>
-        <if test="repositoryUrl!='' and repositoryUrl!=null">
-            AND repository_url LIKE CONCAT('%', #{repositoryUrl}, '%')
+        <if test="query.repositoryUrl!='' and query.repositoryUrl!=null">
+            AND repository_url LIKE CONCAT('%', #{query.repositoryUrl}, '%')
         </if>
-        <if test="commitId!='' and commitId!=null">
-            AND commit_id=#{commitId}
+        <if test="query.commitId!='' and query.commitId!=null">
+            AND commit_id=#{query.commitId}
         </if>
-        <if test="branch!='' and branch!=null">
-            AND branch=LIKE CONCAT('%', #{branch}, '%')
+        <if test="query.branch!='' and query.branch!=null">
+            AND branch=LIKE CONCAT('%', #{query.branch}, '%')
         </if>
-        <if test="serverPorts!='' and serverPorts!=null">
-            AND server_ports LIKE CONCAT('%', #{serverPorts}, '%')
+        <if test="query.serverPorts!='' and query.serverPorts!=null">
+            AND server_ports LIKE CONCAT('%', #{query.serverPorts}, '%')
         </if>
-        <if test="serverUrl!='' and serverUrl!=null">
-            AND server_url LIKE CONCAT('%', #{serverUrl}, '%')
+        <if test="query.serverUrl!='' and query.serverUrl!=null">
+            AND server_url LIKE CONCAT('%', #{query.serverUrl}, '%')
         </if>
-        <if test="buildState!='' and buildState!=null">
-            AND build_state=#{buildState}
+        <if test="query.buildState!='' and query.buildState!=null">
+            AND build_state=#{query.buildState}
         </if>
-        <if test="imageId!='' and imageId!=null">
-            AND image_id=#{imageId}
+        <if test="query.imageId!='' and query.imageId!=null">
+            AND image_id=#{query.imageId}
         </if>
-        <if test="imageName!='' and imageName!=null">
-            AND image_name LIKE CONCAT('%', #{imageName}, '%')
+        <if test="query.imageName!='' and query.imageName!=null">
+            AND image_name LIKE CONCAT('%', #{query.imageName}, '%')
         </if>
-        <if test="buildStartTimeStart!=null">
-            AND build_start_time>=#{buildStartTimeStart}
+        <if test="query.buildStartTimeStart!=null">
+            AND build_start_time>=#{query.buildStartTimeStart}
         </if>
-        <if test="buildStartTimeEnd!=null">
-            <![CDATA[ AND build_start_time<=#{buildStartTimeEnd} ]]>
+        <if test="query.buildStartTimeEnd!=null">
+            <![CDATA[ AND build_start_time<=#{query.buildStartTimeEnd} ]]>
         </if>
         ORDER BY create_date DESC
     </select>

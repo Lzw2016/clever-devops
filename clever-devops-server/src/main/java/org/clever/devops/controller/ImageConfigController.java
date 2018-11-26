@@ -1,6 +1,6 @@
 package org.clever.devops.controller;
 
-import com.github.pagehelper.PageInfo;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.spotify.docker.client.messages.ContainerCreation;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -35,7 +35,7 @@ public class ImageConfigController extends BaseController {
 
     @ApiOperation("查询Docker镜像配置")
     @GetMapping("/image_config" + JSON_SUFFIX)
-    public PageInfo<ImageConfigQueryRes> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
+    public IPage<ImageConfigQueryRes> findImageConfig(ImageConfigQueryReq imageConfigQueryReq) {
         return imageConfigService.findImageConfig(imageConfigQueryReq);
     }
 

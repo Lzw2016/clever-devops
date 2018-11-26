@@ -5,7 +5,7 @@ import com.pty4j.PtyProcess;
 import com.pty4j.WinSize;
 import com.sun.jna.Platform;
 import lombok.extern.slf4j.Slf4j;
-import org.clever.common.model.exception.BusinessException;
+import org.clever.common.exception.BusinessException;
 
 import java.io.*;
 import java.util.Arrays;

@@ -1,6 +1,6 @@
 package org.clever.devops.controller;
 
-import com.github.pagehelper.PageInfo;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.clever.common.server.controller.BaseController;
@@ -27,7 +27,7 @@ public class ImageBuildLogController extends BaseController {
 
     @ApiOperation("查询Docker镜像构建日志")
     @GetMapping("/image_build_log" + JSON_SUFFIX)
-    public PageInfo<ImageBuildLog> findByPage(ImageBuildLogQueryReq imageBuildLogQueryReq) {
+    public IPage<ImageBuildLog> findByPage(ImageBuildLogQueryReq imageBuildLogQueryReq) {
         return imageBuildLogService.findByPage(imageBuildLogQueryReq);
     }
 

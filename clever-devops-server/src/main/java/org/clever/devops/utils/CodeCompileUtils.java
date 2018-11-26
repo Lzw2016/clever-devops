@@ -3,7 +3,7 @@ package org.clever.devops.utils;
 import com.sun.jna.Platform;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.clever.common.model.exception.BusinessException;
+import org.clever.common.exception.BusinessException;
 
 import java.io.File;
 import java.util.ArrayList;

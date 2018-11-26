@@ -3,7 +3,7 @@ package org.clever.devops.websocket.build;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.clever.common.model.exception.BusinessException;
+import org.clever.common.exception.BusinessException;
 import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.common.utils.spring.SpringContextHolder;
 import org.clever.devops.config.GlobalConfig;
@@ -170,14 +170,14 @@ public class BuildImageTask extends Task {
             // 保存构建日志
             imageBuildLog.setBuildState(ImageConfig.buildState_1);
             imageBuildLog.setBuildStartTime(new Date());
-            imageBuildLogMapper.insertSelective(imageBuildLog);
+            imageBuildLogMapper.insert(imageBuildLog);
             // 更新 ImageConfig 状态
             ImageConfig updateImageConfig = new ImageConfig();
             updateImageConfig.setId(imageConfig.getId());
             updateImageConfig.setBuildState(ImageConfig.buildState_1);
             updateImageConfig.setBuildStartTime(new Date());
             updateImageConfig.setUpdateDate(new Date());
-            imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+            imageConfigMapper.updateById(updateImageConfig);
             // 1.下载代码
             buildImageRes.setBuildState(ImageConfig.buildState_1);
             downloadCode();
@@ -216,7 +216,7 @@ public class BuildImageTask extends Task {
             updateImageConfig.setBuildEndTime(new Date());
             updateImageConfig.setBuildLogs(allLogText.toString());
             updateImageConfig.setUpdateDate(new Date());
-            imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+            imageConfigMapper.updateById(updateImageConfig);
             // 更新构建日志
             ImageBuildLog updateImageBuildLog = new ImageBuildLog();
             updateImageBuildLog.setId(imageBuildLog.getId());
@@ -224,7 +224,7 @@ public class BuildImageTask extends Task {
             updateImageBuildLog.setBuildEndTime(new Date());
             updateImageBuildLog.setBuildLogs(allLogText.toString());
             updateImageBuildLog.setUpdateDate(new Date());
-            imageBuildLogMapper.updateByPrimaryKeySelective(updateImageBuildLog);
+            imageBuildLogMapper.updateById(updateImageBuildLog);
         }
         if (buildImageReq.isStartContainer()) {
             // TODO 新建容器 启动容器
@@ -251,8 +251,8 @@ public class BuildImageTask extends Task {
         updateImageConfig.setId(imageConfig.getId());
         updateImageConfig.setCodeDownloadPath(FilenameUtils.concat(globalConfig.getCodeDownloadPath(), UUID.randomUUID().toString()));
         updateImageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
-        imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
+        imageConfigMapper.updateById(updateImageConfig);
+        imageConfig = imageConfigMapper.selectById(imageConfig.getId());
         // 更新CommitID -> 下载代码
         String commitId = null;
         switch (codeRepository.getRepositoryType()) {
@@ -275,11 +275,11 @@ public class BuildImageTask extends Task {
         updateImageConfig.setId(imageConfig.getId());
         updateImageConfig.setCommitId(commitId);
         updateImageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        imageConfigMapper.updateById(updateImageConfig);
         // 下载代码
         CodeRepositoryUtils.downloadCode(codeRepository, imageConfig, this::sendLogText);
         sendLogText(Ansi.ansi().newline().a("[1.下载代码] 完成").toString(), Ansi.Color.GREEN);
-        imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
+        imageConfig = imageConfigMapper.selectById(imageConfig.getId());
         // 更新构建日志
         ImageBuildLog updateImageBuildLog = new ImageBuildLog();
         updateImageBuildLog.setId(imageBuildLog.getId());
@@ -287,7 +287,7 @@ public class BuildImageTask extends Task {
         updateImageBuildLog.setCommitId(imageConfig.getCommitId());
         updateImageBuildLog.setBuildState(ImageConfig.buildState_2);
         updateImageBuildLog.setUpdateDate(new Date());
-        imageBuildLogMapper.updateByPrimaryKeySelective(updateImageBuildLog);
+        imageBuildLogMapper.updateById(updateImageBuildLog);
     }
 
     /**
@@ -304,7 +304,7 @@ public class BuildImageTask extends Task {
         updateImageConfig.setId(imageConfig.getId());
         updateImageConfig.setBuildState(ImageConfig.buildState_2);
         updateImageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        imageConfigMapper.updateById(updateImageConfig);
         // 编译代码
         CodeRepositoryUtils.compileCode(imageConfig, new ConsoleOutput() {
             @Override
@@ -317,13 +317,13 @@ public class BuildImageTask extends Task {
                 sendLogText("[2.编译代码] 编译完成", Ansi.Color.GREEN);
             }
         });
-        imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
+        imageConfig = imageConfigMapper.selectById(imageConfig.getId());
         // 更新构建日志
         ImageBuildLog updateImageBuildLog = new ImageBuildLog();
         updateImageBuildLog.setId(imageBuildLog.getId());
         updateImageBuildLog.setBuildState(ImageConfig.buildState_3);
         updateImageBuildLog.setUpdateDate(new Date());
-        imageBuildLogMapper.updateByPrimaryKeySelective(updateImageBuildLog);
+        imageBuildLogMapper.updateById(updateImageBuildLog);
     }
 
     /**
@@ -336,7 +336,7 @@ public class BuildImageTask extends Task {
         updateImageConfig.setId(imageConfig.getId());
         updateImageConfig.setBuildState(ImageConfig.buildState_3);
         updateImageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
+        imageConfigMapper.updateById(updateImageConfig);
         // 构建镜像
         String branch = imageConfig.getBranch().substring(imageConfig.getBranch().lastIndexOf('/') + 1, imageConfig.getBranch().length());
         String imageName = String.format("%1$s:%2$s", codeRepository.getProjectName(), branch);
@@ -347,8 +347,8 @@ public class BuildImageTask extends Task {
         updateImageConfig.setImageId(imageId);
         updateImageConfig.setImageName(imageName);
         updateImageConfig.setUpdateDate(new Date());
-        imageConfigMapper.updateByPrimaryKeySelective(updateImageConfig);
-        imageConfig = imageConfigMapper.selectByPrimaryKey(imageConfig.getId());
+        imageConfigMapper.updateById(updateImageConfig);
+        imageConfig = imageConfigMapper.selectById(imageConfig.getId());
         // 更新构建日志
         ImageBuildLog updateImageBuildLog = new ImageBuildLog();
         updateImageBuildLog.setId(imageBuildLog.getId());
@@ -356,7 +356,7 @@ public class BuildImageTask extends Task {
         updateImageBuildLog.setImageId(imageId);
         updateImageBuildLog.setImageName(imageName);
         updateImageBuildLog.setUpdateDate(new Date());
-        imageBuildLogMapper.updateByPrimaryKeySelective(updateImageBuildLog);
+        imageBuildLogMapper.updateById(updateImageBuildLog);
     }
 
     /**

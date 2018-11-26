@@ -13,20 +13,20 @@
         *
         FROM code_repository
         WHERE 1=1
-        <if test="projectName!='' and projectName!=null">
-            AND project_name LIKE CONCAT('%', #{projectName}, '%')
+        <if test="query.projectName!='' and query.projectName!=null">
+            AND project_name LIKE CONCAT('%', #{query.projectName}, '%')
         </if>
-        <if test="language!='' and language!=null">
-            AND language = #{language}
+        <if test="query.language!='' and query.language!=null">
+            AND language = #{query.language}
         </if>
-        <if test="repositoryUrl!='' and repositoryUrl!=null">
-            AND repository_url LIKE CONCAT('%', #{repositoryUrl}, '%')
+        <if test="query.repositoryUrl!='' and query.repositoryUrl!=null">
+            AND repository_url LIKE CONCAT('%', #{query.repositoryUrl}, '%')
         </if>
-        <if test="repositoryType!='' and repositoryType!=null">
-            AND repository_type = #{repositoryType}
+        <if test="query.repositoryType!='' and query.repositoryType!=null">
+            AND repository_type = #{query.repositoryType}
         </if>
-        <if test="authorizationType!='' and authorizationType!=null">
-            AND authorization_type = #{authorizationType}
+        <if test="query.authorizationType!='' and query.authorizationType!=null">
+            AND authorization_type = #{query.authorizationType}
         </if>
         ORDER BY project_name, create_by DESC
     </select>

@@ -1,7 +1,7 @@
 package org.clever.devops.utils;
 
 import lombok.extern.slf4j.Slf4j;
-import org.clever.common.model.exception.BusinessException;
+import org.clever.common.exception.BusinessException;
 import org.clever.common.utils.exception.ExceptionUtils;
 import org.clever.devops.entity.ImageConfig;
 import org.eclipse.jgit.api.CloneCommand;
