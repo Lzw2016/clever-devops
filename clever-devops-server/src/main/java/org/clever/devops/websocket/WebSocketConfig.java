@@ -39,9 +39,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         String[] allowsOrigins = {"*"};
         //WebSocket通道 withSockJS()表示开启 SockJs, SockJS 所处理的 URL 是 “http://“ 或 “https://“ 模式，而不是 “ws://“ or “wss://“
-        registry.addHandler(buildImageHandler, "/build_image")
-                .addHandler(containerLogHandler, "/server_log")
-                .addHandler(containerStatsHandler, "/server_stats")
+        registry.addHandler(buildImageHandler, "/ws/build_image")
+                .addHandler(containerLogHandler, "/ws/server_log")
+                .addHandler(containerStatsHandler, "/ws/server_stats")
                 .addInterceptors(webSocketHandshakeInterceptor)
                 .setAllowedOrigins(allowsOrigins);
         // .withSockJS();

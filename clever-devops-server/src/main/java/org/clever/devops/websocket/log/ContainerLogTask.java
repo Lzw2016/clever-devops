@@ -150,7 +150,7 @@ public class ContainerLogTask extends Task {
 
                 @Override
                 public void onError(Throwable throwable) {
-                    log.warn("查看日志出现异常", throwable);
+                    log.warn("查看日志出现异常 - {}", throwable.getMessage());
                     sendCompleteMessage(Ansi.ansi().fgRed().newline().a("查看日志出现异常").newline().a(ExceptionUtils.getStackTraceAsString(throwable)).reset().toString());
                 }
 

@@ -134,7 +134,6 @@ public class ImageConfigUtils {
                 log.info("删除Docker Image [id={}] [ServerUrl={}]", imageConfig.getImageId(), imageConfig.getServerUrl());
             } catch (Throwable ignore) {
                 log.info("删除Docker Image失败 image [id={}] [ServerUrl={}]", imageConfig.getImageId(), imageConfig.getServerUrl());
-                log.info("删除Docker Image失败", ignore);
             }
         }
         if (imageId == null) {
