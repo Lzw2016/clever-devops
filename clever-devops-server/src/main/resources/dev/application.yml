@@ -125,7 +125,7 @@ mybatis-plus:
     auto-mapping-behavior: partial
     auto-mapping-unknown-column-behavior: none
     map-underscore-to-camel-case: true
-  mapper-locations: 'classpath*: **/*.xml'
+  mapper-locations: 'classpath*:**/*Mapper.xml'
   check-config-location: true
   executor-type: reuse
   global-config:
